@@ -1,10 +1,13 @@
-﻿using Receiver.Models;
+﻿using Microsoft.Extensions.Configuration;
+using Receiver.Models;
 using Utils;
 
 namespace Receiver
 {
 	public class Program
 	{
+		private static IConfiguration Configuration { get; set; } = null!;
+
 		private static void Main()
 		{
 			Console.BackgroundColor = ConsoleColor.Black;
@@ -19,6 +22,11 @@ namespace Receiver
 			}
 
 			Console.WriteLine($"Hello from Receiver '{receiverType.GetDescription()}'");
+
+			var builder = new ConfigurationBuilder()
+				.AddJsonFile($"appsettings.{receiverType.GetDescription()}.json", false, true);
+
+			Configuration = builder.Build();
 		}
 	}
 }

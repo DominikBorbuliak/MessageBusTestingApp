@@ -1,10 +1,13 @@
-﻿using Sender.Models;
+﻿using Microsoft.Extensions.Configuration;
+using Sender.Models;
 using Utils;
 
 namespace Sender
 {
 	public class Program
 	{
+		private static IConfiguration Configuration { get; set; } = null!;
+
 		private static void Main()
 		{
 			Console.BackgroundColor = ConsoleColor.Black;
@@ -19,6 +22,11 @@ namespace Sender
 			}
 
 			Console.WriteLine($"Hello from Sender '{senderType.GetDescription()}'");
+
+			var builder = new ConfigurationBuilder()
+				.AddJsonFile($"appsettings.{senderType.GetDescription()}.json", false, true);
+
+			Configuration = builder.Build();
 		}
 	}
 }
