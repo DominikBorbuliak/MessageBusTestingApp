@@ -1,0 +1,28 @@
+{
+  "profiles": {
+    "MicrosoftBizTalkReceiver": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "MESSAGE_BUS_RECEIVER_TYPE": "MicrosoftBizTalkServer"
+      }
+    },
+    "RabbitMQReceiver": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "MESSAGE_BUS_RECEIVER_TYPE": "RabbitMQ"
+      }
+    },
+    "NServiceBusReceiver": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "MESSAGE_BUS_RECEIVER_TYPE": "NServiceBus"
+      }
+    },
+    "AzureServiceBusReceiver": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "MESSAGE_BUS_RECEIVER_TYPE": "AzureServiceBus"
+      }
+    }
+  }
+}
