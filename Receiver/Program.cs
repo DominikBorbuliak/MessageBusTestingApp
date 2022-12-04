@@ -1,6 +1,8 @@
-﻿using Azure.Messaging.ServiceBus;
-using Microsoft.Extensions.Configuration;
-using Receiver.Models;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Services.Contracts;
+using Services.Models;
+using Services.Services;
 using Utils;
 
 namespace Receiver
@@ -8,70 +10,58 @@ namespace Receiver
 	public class Program
 	{
 		private static IConfiguration Configuration { get; set; } = null!;
+		private static MessageBusType MessageBusType;
 
 		private static void Main()
 		{
+			// Setup console
 			Console.BackgroundColor = ConsoleColor.Black;
 			Console.ForegroundColor = ConsoleColor.White;
 
+			// Verificate message bus type
 			var receiverTypeName = Environment.GetEnvironmentVariable(Constants.EnvironmentVariables.MessageBusReceiverType);
-
-			if (!Enum.TryParse<ReceiverType>(receiverTypeName, false, out var receiverType))
+			if (!Enum.TryParse(receiverTypeName, false, out MessageBusType))
 			{
 				ConsoleUtils.WriteLineColor($"Receiver type '{receiverTypeName}' is currently not supported!", ConsoleColor.Red);
 				return;
 			}
 
-			Console.WriteLine($"Hello from Receiver '{receiverType.GetDescription()}'");
-
+			// Build configuration file
 			var builder = new ConfigurationBuilder()
-				.AddJsonFile($"appsettings.{receiverType.GetDescription()}.json", false, true);
+				.AddJsonFile($"appsettings.{MessageBusType.GetDescription()}.json", false, true);
 
 			Configuration = builder.Build();
 
-			// TODO: Move to services and repositories
-			var clientOptions = new ServiceBusClientOptions()
-			{
-				TransportType = ServiceBusTransportType.AmqpWebSockets
-			};
+			// Convigure services
+			IServiceCollection services = new ServiceCollection();
+			ConfigureServices(services);
 
-			var serviceBusClient = new ServiceBusClient(Configuration.GetConnectionString("ServiceBusNamespaceConnectionString"), clientOptions);
-			var serviceBusProcessor = serviceBusClient.CreateProcessor(Configuration.GetSection("ServiceBusSettings")["QueueName"], new ServiceBusProcessorOptions());
+			var serviceProvider = services.BuildServiceProvider();
+			var application = serviceProvider.GetService<Application>();
 
-			try
-			{
-				serviceBusProcessor.ProcessMessageAsync += MessageHandler;
-				serviceBusProcessor.ProcessErrorAsync += ErrorHandler;
-
-				serviceBusProcessor.StartProcessingAsync().Wait();
-
-				Console.WriteLine("Wait for a minute and then press any key to end the processing");
-				Console.ReadKey();
-
-				// stop processing 
-				Console.WriteLine("\nStopping the receiver...");
-				serviceBusProcessor.StopProcessingAsync().Wait();
-				Console.WriteLine("Stopped receiving messages");
-			}
-			finally
-			{
-				serviceBusProcessor.DisposeAsync();
-				serviceBusClient.DisposeAsync();
-			}
+			// Run application
+			application?.Run().Wait();
 		}
 
-		private static async Task MessageHandler(ProcessMessageEventArgs arguments)
+		/// <summary>
+		/// Initialize services for application
+		/// </summary>
+		/// <param name="services"></param>
+		/// <exception cref="NotImplementedException"></exception>
+		private static void ConfigureServices(IServiceCollection services)
 		{
-			var body = arguments.Message.Body.ToString();
+			services.AddSingleton(x => Configuration);
 
-			Console.WriteLine(body);
+			switch (MessageBusType)
+			{
+				case MessageBusType.AzureServiceBus:
+					services.AddSingleton<IReceiverService>(x => new AzureServiceBusReceiver(Configuration));
+					break;
+				default:
+					throw new NotImplementedException($"{MessageBusType.GetDescription()} is not yet implemented!");
+			}
 
-			await arguments.CompleteMessageAsync(arguments.Message);
-		}
-
-		private static async Task ErrorHandler(ProcessErrorEventArgs args)
-		{
-			Console.WriteLine(args.Exception.ToString());
+			services.AddSingleton<Application>();
 		}
 	}
 }

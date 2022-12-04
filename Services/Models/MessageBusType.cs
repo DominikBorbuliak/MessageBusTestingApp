@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel;
 
-namespace Receiver.Models
+namespace Services.Models
 {
-	public enum ReceiverType
+	public enum MessageBusType
 	{
 		[Description("azure-service-bus")]
 		AzureServiceBus,
