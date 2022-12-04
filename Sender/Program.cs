@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Azure.Messaging.ServiceBus;
+using Microsoft.Extensions.Configuration;
 using Sender.Models;
 using Utils;
 
@@ -27,6 +28,25 @@ namespace Sender
 				.AddJsonFile($"appsettings.{senderType.GetDescription()}.json", false, true);
 
 			Configuration = builder.Build();
+
+			// TODO: Move to services and repositories
+			var clientOptions = new ServiceBusClientOptions()
+			{
+				TransportType = ServiceBusTransportType.AmqpWebSockets
+			};
+
+			var serviceBusClient = new ServiceBusClient(Configuration.GetConnectionString("ServiceBusNamespaceConnectionString"), clientOptions);
+			var serviceBusSender = serviceBusClient.CreateSender(Configuration.GetSection("ServiceBusSettings")["QueueName"]);
+
+			try
+			{
+				serviceBusSender.SendMessageAsync(new ServiceBusMessage("This is test message from SENDER!")).Wait();
+			}
+			finally
+			{
+				serviceBusSender.DisposeAsync();
+				serviceBusClient.DisposeAsync();
+			}
 		}
 	}
 }
