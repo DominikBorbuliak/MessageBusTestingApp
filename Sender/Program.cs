@@ -57,6 +57,9 @@ namespace Sender
 				case MessageBusType.AzureServiceBus:
 					services.AddSingleton<ISenderService>(x => new AzureServiceBusSender(Configuration));
 					break;
+				case MessageBusType.RabbitMQ:
+					services.AddSingleton<ISenderService>(x => new RabbitMQSender(Configuration));
+					break;
 				default:
 					throw new NotImplementedException($"{MessageBusType.GetDescription()} is not yet implemented!");
 			}
