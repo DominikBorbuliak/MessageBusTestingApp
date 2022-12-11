@@ -1,5 +1,4 @@
 ﻿using Services.Contracts;
-using Services.Models;
 
 namespace Receiver
 {

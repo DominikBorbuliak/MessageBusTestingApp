@@ -60,6 +60,9 @@ namespace Sender
 				case MessageBusType.RabbitMQ:
 					services.AddSingleton<ISenderService>(x => new RabbitMQSender(Configuration));
 					break;
+				case MessageBusType.NServiceBus:
+					services.AddSingleton<ISenderService>(x => new NServiceBusSender(Configuration));
+					break;
 				default:
 					throw new NotImplementedException($"{MessageBusType.GetDescription()} is not yet implemented!");
 			}
