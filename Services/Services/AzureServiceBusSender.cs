@@ -12,12 +12,12 @@ namespace Services.Services
 
 		public AzureServiceBusSender(IConfiguration configuration)
 		{
-			_serviceBusClient = new ServiceBusClient(configuration.GetConnectionString("ServiceBusNamespaceConnectionString"), new ServiceBusClientOptions()
+			_serviceBusClient = new ServiceBusClient(configuration.GetConnectionString("AzureServiceBus"), new ServiceBusClientOptions()
 			{
 				TransportType = ServiceBusTransportType.AmqpWebSockets
 			});
 
-			_serviceBusSender = _serviceBusClient.CreateSender(configuration.GetSection("ServiceBusSettings")["QueueName"]);
+			_serviceBusSender = _serviceBusClient.CreateSender(configuration.GetSection("ConnectionSettings")["QueueName"]);
 		}
 
 		public async Task SendMessageAsync(Message message)

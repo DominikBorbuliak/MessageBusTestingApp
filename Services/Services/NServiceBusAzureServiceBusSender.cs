@@ -10,12 +10,12 @@ namespace Services.Services
 
 		public NServiceBusAzureServiceBusSender(IConfiguration configuration)
 		{
-			var endpointConfiguration = new EndpointConfiguration(configuration.GetSection("ServiceBusSettings")["SenderEndpointName"]);
+			var endpointConfiguration = new EndpointConfiguration(configuration.GetSection("ConnectionSettings")["SenderEndpointName"]);
 
 			var transport = endpointConfiguration.UseTransport<AzureServiceBusTransport>();
-			transport.ConnectionString(configuration.GetConnectionString("ServiceBusNamespaceConnectionString"));
-			transport.Routing().RouteToEndpoint(typeof(Message), configuration.GetSection("ServiceBusSettings")["ReceiverEndpointName"]);
-			transport.TopicName(configuration.GetSection("ServiceBusSettings")["TopicName"]);
+			transport.ConnectionString(configuration.GetConnectionString("AzureServiceBus"));
+			transport.Routing().RouteToEndpoint(typeof(Message), configuration.GetSection("ConnectionSettings")["ReceiverEndpointName"]);
+			transport.TopicName(configuration.GetSection("ConnectionSettings")["TopicName"]);
 
 			endpointConfiguration.SendOnly();
 			endpointConfiguration.EnableInstallers();

@@ -12,11 +12,11 @@ namespace Services.Services
 
 		public NServiceBusAzureServiceBusReceiver(IConfiguration configuration)
 		{
-			_endpointConfiguration = new EndpointConfiguration(configuration.GetSection("ServiceBusSettings")["ReceiverEndpointName"]);
+			_endpointConfiguration = new EndpointConfiguration(configuration.GetSection("ConnectionSettings")["ReceiverEndpointName"]);
 
 			var transport = _endpointConfiguration.UseTransport<AzureServiceBusTransport>();
-			transport.ConnectionString(configuration.GetConnectionString("ServiceBusNamespaceConnectionString"));
-			transport.TopicName(configuration.GetSection("ServiceBusSettings")["TopicName"]);
+			transport.ConnectionString(configuration.GetConnectionString("AzureServiceBus"));
+			transport.TopicName(configuration.GetSection("ConnectionSettings")["TopicName"]);
 
 			_endpointConfiguration.EnableInstallers();
 		}

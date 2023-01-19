@@ -36,7 +36,7 @@ namespace Services.Services
 			{
 				_channel.BasicPublish(
 					exchange: "",
-					routingKey: "test",
+					routingKey: "nativereceiver",
 					basicProperties: null,
 					body: Encoding.UTF8.GetBytes(message.Text)
 				);

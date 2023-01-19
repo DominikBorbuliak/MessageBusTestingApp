@@ -13,6 +13,7 @@ namespace Services.Services
 		public NServiceBusRabbitMQReceiver(IConfiguration configuration)
 		{
 			_endpointConfiguration = new EndpointConfiguration(configuration.GetSection("ConnectionSettings")["ReceiverEndpointName"]);
+
 			var transport = _endpointConfiguration.UseTransport<RabbitMQTransport>();
 			transport.UseConventionalRoutingTopology(QueueType.Quorum);
 			transport.ConnectionString($"host={configuration.GetSection("ConnectionSettings")["HostName"]}");

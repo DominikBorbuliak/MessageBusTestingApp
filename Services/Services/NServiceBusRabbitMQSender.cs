@@ -11,11 +11,12 @@ namespace Services.Services
 		public NServiceBusRabbitMQSender(IConfiguration configuration)
 		{
 			var endpointConfiguration = new EndpointConfiguration(configuration.GetSection("ConnectionSettings")["SenderEndpointName"]);
+
 			var transport = endpointConfiguration.UseTransport<RabbitMQTransport>();
 			transport.UseConventionalRoutingTopology(QueueType.Quorum);
 			transport.ConnectionString($"host={configuration.GetSection("ConnectionSettings")["HostName"]}");
-
 			transport.Routing().RouteToEndpoint(typeof(Message), configuration.GetSection("ConnectionSettings")["ReceiverEndpointName"]);
+
 			endpointConfiguration.EnableInstallers();
 
 			_endpointInstance = Endpoint.Start(endpointConfiguration).Result;

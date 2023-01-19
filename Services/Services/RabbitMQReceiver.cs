@@ -42,7 +42,7 @@ namespace Services.Services
 		public async Task StartProcessingAsync()
 		{
 			_channel.BasicConsume(
-				queue: "test",
+				queue: "nativereceiver",
 				autoAck: true,
 				consumer: _consumer
 			);
