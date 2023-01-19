@@ -63,6 +63,9 @@ namespace Receiver
 				case MessageBusType.NServiceBusRabbitMQ:
 					services.AddSingleton<IReceiverService>(x => new NServiceBusRabbitMQReceiver(Configuration));
 					break;
+				case MessageBusType.NServiceBusAzureServiceBus:
+					services.AddSingleton<IReceiverService>(x => new NServiceBusAzureServiceBusReceiver(Configuration));
+					break;
 				default:
 					throw new NotImplementedException($"{MessageBusType.GetDescription()} is not yet implemented!");
 			}

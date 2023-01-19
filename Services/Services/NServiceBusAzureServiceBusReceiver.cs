@@ -5,24 +5,25 @@ using Utils;
 
 namespace Services.Services
 {
-	public class NServiceBusRabbitMQReceiver : IReceiverService
+	public class NServiceBusAzureServiceBusReceiver : IReceiverService
 	{
 		private readonly EndpointConfiguration _endpointConfiguration;
 		private IEndpointInstance _endpointInstance = null!;
 
-		public NServiceBusRabbitMQReceiver(IConfiguration configuration)
+		public NServiceBusAzureServiceBusReceiver(IConfiguration configuration)
 		{
-			_endpointConfiguration = new EndpointConfiguration(configuration.GetSection("ConnectionSettings")["ReceiverEndpointName"]);
-			var transport = _endpointConfiguration.UseTransport<RabbitMQTransport>();
-			transport.UseConventionalRoutingTopology(QueueType.Quorum);
-			transport.ConnectionString($"host={configuration.GetSection("ConnectionSettings")["HostName"]}");
+			_endpointConfiguration = new EndpointConfiguration(configuration.GetSection("ServiceBusSettings")["ReceiverEndpointName"]);
+
+			var transport = _endpointConfiguration.UseTransport<AzureServiceBusTransport>();
+			transport.ConnectionString(configuration.GetConnectionString("ServiceBusNamespaceConnectionString"));
+			transport.TopicName(configuration.GetSection("ServiceBusSettings")["TopicName"]);
 
 			_endpointConfiguration.EnableInstallers();
 		}
 
 		public void SetupHandlers()
 		{
-			_endpointConfiguration.ExecuteTheseHandlersFirst(typeof(NServiceBusRabbitMQHandler));
+			_endpointConfiguration.ExecuteTheseHandlersFirst(typeof(NServiceBusAzureServiceBusHandler));
 		}
 
 		public async Task StartProcessingAsync()
@@ -40,8 +41,7 @@ namespace Services.Services
 			return Task.CompletedTask;
 		}
 	}
-
-	public class NServiceBusRabbitMQHandler : IHandleMessages<Message>
+	public class NServiceBusAzureServiceBusHandler : IHandleMessages<Message>
 	{
 		public Task Handle(Message message, IMessageHandlerContext context)
 		{
