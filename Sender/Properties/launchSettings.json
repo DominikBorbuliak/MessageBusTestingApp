@@ -1,28 +1,28 @@
 {
-  "profiles": {
-    "RabbitMQSender": {
-      "commandName": "Project",
-      "environmentVariables": {
-        "MESSAGE_BUS_SENDER_TYPE": "RabbitMQ"
-      }
-    },
-    "AzureServiceBusSender": {
-      "commandName": "Project",
-      "environmentVariables": {
-        "MESSAGE_BUS_SENDER_TYPE": "AzureServiceBus"
-      }
-    },
-    "NServiceBusSender": {
-      "commandName": "Project",
-      "environmentVariables": {
-        "MESSAGE_BUS_SENDER_TYPE": "NServiceBus"
-      }
-    },
-    "MicrosoftBizTalkServerSender": {
-      "commandName": "Project",
-      "environmentVariables": {
-        "MESSAGE_BUS_SENDER_TYPE": "MicrosoftBizTalkServer"
-      }
-    }
-  }
+	"profiles": {
+		"AzureServiceBusSender": {
+			"commandName": "Project",
+			"environmentVariables": {
+				"MESSAGE_BUS_SENDER_TYPE": "AzureServiceBus"
+			}
+		},
+		"RabbitMQSender": {
+			"commandName": "Project",
+			"environmentVariables": {
+				"MESSAGE_BUS_SENDER_TYPE": "RabbitMQ"
+			}
+		},
+		"NServiceBusAzureServiceBusSender": {
+			"commandName": "Project",
+			"environmentVariables": {
+				"MESSAGE_BUS_SENDER_TYPE": "NServiceBusAzureServiceBus"
+			}
+		},
+		"NServiceBusRabbitMQSender": {
+			"commandName": "Project",
+			"environmentVariables": {
+				"MESSAGE_BUS_SENDER_TYPE": "NServiceBusRabbitMQ"
+			}
+		}
+	}
 }

@@ -7,13 +7,13 @@ namespace Services.Models
 		[Description("azure-service-bus")]
 		AzureServiceBus,
 
-		[Description("microsoft-biz-talk-server")]
-		MicrosoftBizTalkServer,
-
-		[Description("n-service-bus")]
-		NServiceBus,
-
 		[Description("rabbit-mq")]
-		RabbitMQ
+		RabbitMQ,
+
+		[Description("n-service-bus-azure-service-bus")]
+		NServiceBusAzureServiceBus,
+
+		[Description("n-service-bus-rabbit-mq")]
+		NServiceBusRabbitMQ
 	}
 }

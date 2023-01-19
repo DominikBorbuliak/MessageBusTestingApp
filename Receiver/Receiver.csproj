@@ -28,10 +28,10 @@
 		<None Update="appsettings.azure-service-bus.json">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
-		<None Update="appsettings.microsoft-biz-talk-server.json">
+		<None Update="appsettings.n-service-bus-azure-service-bus.json">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
-		<None Update="appsettings.n-service-bus.json">
+		<None Update="appsettings.n-service-bus-rabbit-mq.json">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 		<None Update="appsettings.rabbit-mq.json">

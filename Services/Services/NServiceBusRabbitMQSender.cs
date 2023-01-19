@@ -4,11 +4,11 @@ using Services.Models;
 
 namespace Services.Services
 {
-	public class NServiceBusSender : ISenderService
+	public class NServiceBusRabbitMQSender : ISenderService
 	{
 		private readonly IEndpointInstance _endpointInstance;
 
-		public NServiceBusSender(IConfiguration configuration)
+		public NServiceBusRabbitMQSender(IConfiguration configuration)
 		{
 			var endpointConfiguration = new EndpointConfiguration(configuration.GetSection("ConnectionSettings")["SenderEndpointName"]);
 			var transport = endpointConfiguration.UseTransport<RabbitMQTransport>();

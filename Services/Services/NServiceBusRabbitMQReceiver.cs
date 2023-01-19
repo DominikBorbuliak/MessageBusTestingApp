@@ -5,12 +5,12 @@ using Utils;
 
 namespace Services.Services
 {
-	public class NServiceBusReceiver : IReceiverService
+	public class NServiceBusRabbitMQReceiver : IReceiverService
 	{
 		private readonly EndpointConfiguration _endpointConfiguration;
 		private IEndpointInstance _endpointInstance = null!;
 
-		public NServiceBusReceiver(IConfiguration configuration)
+		public NServiceBusRabbitMQReceiver(IConfiguration configuration)
 		{
 			_endpointConfiguration = new EndpointConfiguration(configuration.GetSection("ConnectionSettings")["ReceiverEndpointName"]);
 			var transport = _endpointConfiguration.UseTransport<RabbitMQTransport>();
