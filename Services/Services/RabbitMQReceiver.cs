@@ -34,32 +34,28 @@ namespace Services.Services
 			_consumer = new EventingBasicConsumer(_channel);
 		}
 
-		public void SetupHandlers()
+		public async Task Run()
 		{
-			_consumer.Received += (_, eventArguments) => MessageHandler(eventArguments);
-		}
+			try
+			{
+				_consumer.Received += (_, eventArguments) => MessageHandler(eventArguments);
 
-		public async Task StartProcessingAsync()
-		{
-			_channel.BasicConsume(
-				queue: "nativereceiver",
-				autoAck: true,
-				consumer: _consumer
-			);
-		}
+				_channel.BasicConsume(
+					queue: "nativereceiver",
+					autoAck: true,
+					consumer: _consumer
+				);
 
-		public async Task StopProcessingAsync()
-		{
-			_connection.Close();
-		}
+				Console.WriteLine("Press any key to exit application and stop processing!");
+				Console.ReadKey();
 
-		public async Task DisposeAsync()
-		{
-			await Task.Run(() =>
+				_connection.Close();
+			}
+			finally
 			{
 				_channel.Dispose();
 				_connection.Dispose();
-			});
+			}
 		}
 
 		private void MessageHandler(BasicDeliverEventArgs arguments)

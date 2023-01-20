@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.Configuration;
 using RabbitMQ.Client;
 using Services.Contracts;
-using Services.Models;
 using System.Text;
+using Utils;
 
 namespace Services.Services
 {
@@ -30,26 +30,34 @@ namespace Services.Services
 			);
 		}
 
-		public async Task SendMessageAsync(Message message)
+		public async Task Run()
 		{
-			await Task.Run(() =>
-			{
-				_channel.BasicPublish(
-					exchange: "",
-					routingKey: "nativereceiver",
-					basicProperties: null,
-					body: Encoding.UTF8.GetBytes(message.Text)
-				);
-			});
-		}
+			string? message;
 
-		public async Task DisposeAsync()
-		{
-			await Task.Run(() =>
+			do
 			{
-				_channel.Dispose();
-				_connection.Dispose();
-			});
+				Console.WriteLine("Press enter to exit application or type text of the message!");
+				message = Console.ReadLine();
+
+				if (!string.IsNullOrEmpty(message))
+				{
+					_channel.BasicPublish(
+						exchange: "",
+						routingKey: "nativereceiver",
+						basicProperties: null,
+						body: Encoding.UTF8.GetBytes(message)
+					);
+					ConsoleUtils.WriteLineColor("Message was successfully send to queue!\n", ConsoleColor.Green);
+				}
+				else
+				{
+					ConsoleUtils.WriteLineColor("Application was successfully closed!", ConsoleColor.Green);
+				}
+
+			} while (!string.IsNullOrEmpty(message));
+
+			_channel.Dispose();
+			_connection.Dispose();
 		}
 	}
 }

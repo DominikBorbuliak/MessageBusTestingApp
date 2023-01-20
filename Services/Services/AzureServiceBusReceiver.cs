@@ -1,5 +1,4 @@
-﻿using Azure.Core;
-using Azure.Messaging.ServiceBus;
+﻿using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Configuration;
 using Services.Contracts;
 using Utils;
@@ -21,26 +20,25 @@ namespace Services.Services
 			_serviceBusProcessor = _serviceBusClient.CreateProcessor(configuration.GetSection("ConnectionSettings")["QueueName"], new ServiceBusProcessorOptions());
 		}
 
-		public void SetupHandlers()
+		public async Task Run()
 		{
-			_serviceBusProcessor.ProcessMessageAsync += MessageHandler;
-			_serviceBusProcessor.ProcessErrorAsync += ErrorHandler;
-		}
+			try
+			{
+				_serviceBusProcessor.ProcessMessageAsync += MessageHandler;
+				_serviceBusProcessor.ProcessErrorAsync += ErrorHandler;
 
-		public async Task StartProcessingAsync()
-		{
-			await _serviceBusProcessor.StartProcessingAsync();
-		}
+				await _serviceBusProcessor.StartProcessingAsync();
 
-		public async Task StopProcessingAsync()
-		{
-			await _serviceBusProcessor.StopProcessingAsync();
-		}
+				Console.WriteLine("Press any key to exit application and stop processing!");
+				Console.ReadKey();
 
-		public async Task DisposeAsync()
-		{
-			await _serviceBusProcessor.DisposeAsync();
-			await _serviceBusClient.DisposeAsync();
+				await _serviceBusProcessor.StopProcessingAsync();
+			}
+			finally
+			{
+				await _serviceBusProcessor.DisposeAsync();
+				await _serviceBusClient.DisposeAsync();
+			}
 		}
 
 		private async Task MessageHandler(ProcessMessageEventArgs arguments)

@@ -21,24 +21,23 @@ namespace Services.Services
 			_endpointConfiguration.EnableInstallers();
 		}
 
-		public void SetupHandlers()
+		public async Task Run()
 		{
-			_endpointConfiguration.ExecuteTheseHandlersFirst(typeof(NServiceBusRabbitMQHandler));
-		}
+			try
+			{
+				_endpointConfiguration.ExecuteTheseHandlersFirst(typeof(NServiceBusRabbitMQHandler));
 
-		public async Task StartProcessingAsync()
-		{
-			_endpointInstance = await Endpoint.Start(_endpointConfiguration);
-		}
+				_endpointInstance = await Endpoint.Start(_endpointConfiguration);
 
-		public async Task StopProcessingAsync()
-		{
-			await _endpointInstance.Stop();
-		}
+				Console.WriteLine("Press any key to exit application and stop processing!");
+				Console.ReadKey();
 
-		public Task DisposeAsync()
-		{
-			return Task.CompletedTask;
+				await _endpointInstance.Stop();
+			}
+			finally
+			{
+
+			}
 		}
 	}
 
