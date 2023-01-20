@@ -32,6 +32,28 @@ namespace Utils.Tests
 			Assert.AreEqual("TypeB1MenuDisplayName", ((TestEnumB)TestEnumA.TypeA1).GetMenuDisplayName());
 			Assert.ThrowsException<ArgumentException>(() => ((TestEnumB)TestEnumA.TypeA2).GetMenuDisplayName());
 		}
+
+		[TestMethod()]
+		public void GetValueFromMenuDisplayNameTest()
+		{
+			var resultA = EnumUtils.GetValueFromMenuDisplayName<TestEnumA>("TypeA3MenuDisplayName");
+			Assert.IsNotNull(resultA);
+			Assert.AreEqual(TestEnumA.TypeA3, (TestEnumA)resultA);
+
+			resultA = EnumUtils.GetValueFromMenuDisplayName<TestEnumA>(string.Empty);
+			Assert.IsNotNull(resultA);
+			Assert.AreEqual(TestEnumA.TypeA2, (TestEnumA)resultA);
+
+			resultA = EnumUtils.GetValueFromMenuDisplayName<TestEnumA>("TypeANotExistingMenuDisplayName");
+			Assert.IsNull(resultA);
+
+			var resultB = EnumUtils.GetValueFromMenuDisplayName<TestEnumB>("TypeB1MenuDisplayName");
+			Assert.IsNotNull(resultB);
+			Assert.AreEqual(TestEnumB.TypeB1, (TestEnumB)resultB);
+
+			resultB = EnumUtils.GetValueFromMenuDisplayName<TestEnumB>("TypeBNotExistingMenuDisplayName");
+			Assert.IsNull(resultB);
+		}
 	}
 
 	/// <summary>

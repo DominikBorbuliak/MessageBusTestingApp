@@ -17,16 +17,20 @@ namespace Sender
 			// Setup console
 			Console.BackgroundColor = ConsoleColor.Black;
 			Console.ForegroundColor = ConsoleColor.White;
+			Console.CursorVisible = false;
+			Console.Title = "Sender";
 
-			// Verificate message bus type
-			var senderTypeName = Environment.GetEnvironmentVariable(Constants.EnvironmentVariables.MessageBusSenderType);
-			if (!Enum.TryParse(senderTypeName, false, out MessageBusType))
-			{
-				ConsoleUtils.WriteLineColor($"Sender type '{senderTypeName}' is currently not supported!", ConsoleColor.Red);
+			// Display main menu
+			Menu<MessageBusType> mainMenu = new Menu<MessageBusType>("Please select message bus sender type", "Use arrow DOWN and UP to navigate through menu.\nPress ENTER to submit.", true);
+			var pickedMainMenuItem = mainMenu.HandleMenuMovement();
+
+			// Exit was selected
+			if (pickedMainMenuItem == null)
 				return;
-			}
 
-			Console.Title = $"{senderTypeName} Sender";
+			MessageBusType = (MessageBusType)pickedMainMenuItem;
+			Console.Clear();
+			Console.Title = $"{MessageBusType.GetMenuDisplayName()} Sender";
 
 			// Build configuration file
 			var builder = new ConfigurationBuilder()

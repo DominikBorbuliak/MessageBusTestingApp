@@ -1,6 +1,7 @@
 ﻿using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Configuration;
 using Services.Contracts;
+using Services.Models;
 using Utils;
 
 namespace Services.Services
@@ -22,27 +23,99 @@ namespace Services.Services
 
 		public async Task Run()
 		{
-			string? message;
-
-			do
+			try
 			{
-				Console.WriteLine("Press enter to exit application or type text of the message!");
-				message = Console.ReadLine();
+				Menu<ActionType> actionMenu = new Menu<ActionType>("Please select action type.", "Use arrow DOWN and UP to navigate through menu.\nPress ENTER to submit.", true);
+				ActionType? pickedActionMenuItem;
 
-				if (!string.IsNullOrEmpty(message))
+				while ((pickedActionMenuItem = actionMenu.HandleMenuMovement()) != null)
 				{
-					await _serviceBusSender.SendMessageAsync(new ServiceBusMessage(message));
-					ConsoleUtils.WriteLineColor("Message was successfully send to queue!\n", ConsoleColor.Green);
+					Console.Clear();
+					Console.CursorVisible = true;
+
+					switch (pickedActionMenuItem)
+					{
+						case ActionType.SendOnlyOneCustomSimpleMessage:
+							await HandleSendOnlyOneCustomSimpleMessage();
+							break;
+						case ActionType.SendOnlyOneCustomAdvancedMessage:
+							await HandleSendOnlyOneCustomAdvancedMessage();
+							break;
+						case ActionType.SendOnlyNRandomSimpleMessages:
+							await HandleSendOnlyNRandomSimpleMessages();
+							break;
+						case ActionType.SendOnlyNRandomAdvancedMessages:
+							await HandleSendOnlyNRandomAdvancedMessages();
+							break;
+					}
+
+					ConsoleUtils.WriteLineColor("Message was successfully send to queue!", ConsoleColor.Green);
+					Thread.Sleep(1000);
 				}
-				else
+			}
+			catch
+			{
+				ConsoleUtils.WriteLineColor($"Error occured. Press anything to exit application.", ConsoleColor.Red);
+				Console.ReadKey();
+			}
+			finally
+			{
+				await _serviceBusSender.DisposeAsync();
+				await _serviceBusClient.DisposeAsync();
+			}
+		}
+
+		private async Task HandleSendOnlyOneCustomSimpleMessage()
+		{
+			var simpleMessage = new SimpleMessage
+			{
+				Text = ConsoleUtils.GetUserTextInput("Please insert text of message:")
+			};
+
+			await _serviceBusSender.SendMessageAsync(simpleMessage.ToServiceBusMessage());
+		}
+
+		private async Task HandleSendOnlyOneCustomAdvancedMessage()
+		{
+			var advancedMessage = new AdvancedMessage
+			{
+				Name = ConsoleUtils.GetUserTextInput("Please insert the name:"),
+				Surname = ConsoleUtils.GetUserTextInput("Please insert the surname:"),
+				Age = ConsoleUtils.GetUserNumberInput("Please enter the age:"),
+				Email = ConsoleUtils.GetUserTextInput("Please enter the email:"),
+				Description = ConsoleUtils.GetUserTextInput("Please enter the description:"),
+				Address = new AdvancedMessageAddress
 				{
-					ConsoleUtils.WriteLineColor("Application was successfully closed!", ConsoleColor.Green);
+					StreetName = ConsoleUtils.GetUserTextInput("Please enter the street name:"),
+					BuildingNumber = ConsoleUtils.GetUserNumberInput("Please enter the street number:"),
+					City = ConsoleUtils.GetUserTextInput("Please enter the city:"),
+					PostalCode = ConsoleUtils.GetUserTextInput("Please enter the postal code:"),
+					Country = ConsoleUtils.GetUserTextInput("Please enter the country:")
 				}
+			};
 
-			} while (!string.IsNullOrEmpty(message));
+			await _serviceBusSender.SendMessageAsync(advancedMessage.ToServiceBusMessage());
+		}
 
-			await _serviceBusSender.DisposeAsync();
-			await _serviceBusClient.DisposeAsync();
+		private async Task HandleSendOnlyNRandomSimpleMessages()
+		{
+			var n = ConsoleUtils.GetUserNumberInput("Please enter the number of messages you want to send:");
+
+			RandomMessageGenerator messageGenerator = new RandomMessageGenerator();
+
+			for (var i = 0; i < n; i++)
+				await _serviceBusSender.SendMessageAsync(messageGenerator.GetRandomSimpleMessage().ToServiceBusMessage());
+		}
+
+		private async Task HandleSendOnlyNRandomAdvancedMessages()
+		{
+			var n = ConsoleUtils.GetUserNumberInput("Please enter the number of messages you want to send:");
+
+			RandomMessageGenerator messageGenerator = new RandomMessageGenerator();
+			var randomMessages = await messageGenerator.GetRandomAdvancedMessages(n);
+
+			foreach (var randomMessage in randomMessages)
+				await _serviceBusSender.SendMessageAsync(randomMessage.ToServiceBusMessage());
 		}
 	}
 }

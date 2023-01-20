@@ -1,5 +1,4 @@
-﻿using System.ComponentModel;
-using System.Reflection;
+﻿using System.Reflection;
 
 namespace Utils
 {
@@ -13,9 +12,8 @@ namespace Utils
 		/// <returns>
 		/// Configuration name of enum value - if exists
 		/// string.Empty - if configuration name is missing or empty
-		/// null - if value does not exists in current enum
 		/// </returns>
-		public static string? GetConfigurationName<E>(this E value) where E : Enum => value.GetAttribute<E, ConfigurationNameAttribute>()?.ConfigurationName ?? string.Empty;
+		public static string GetConfigurationName<E>(this E value) where E : Enum => value.GetAttribute<E, ConfigurationNameAttribute>()?.ConfigurationName ?? string.Empty;
 
 		/// <summary>
 		/// Get menu display name of enum value
@@ -25,9 +23,8 @@ namespace Utils
 		/// <returns>
 		/// Menu display name of enum value - if exists
 		/// string.Empty - if menu display name is missing or empty
-		/// null - if value does not exists in current enum
 		/// </returns>
-		public static string? GetMenuDisplayName<E>(this E value) where E : Enum => value.GetAttribute<E, MenuDisplayNameAttribute>()?.MenuDisplayName ?? string.Empty;
+		public static string GetMenuDisplayName<E>(this E value) where E : Enum => value.GetAttribute<E, MenuDisplayNameAttribute>()?.MenuDisplayName ?? string.Empty;
 
 		/// <summary>
 		/// Get specified attribute of enum value
@@ -40,7 +37,7 @@ namespace Utils
 		/// null - if attribute is missing
 		/// </returns>
 		/// <exception cref="ArgumentException"></exception>
-		public static A? GetAttribute<E, A>(this E enumValue)
+		private static A? GetAttribute<E, A>(this E enumValue)
 			where E : Enum
 			where A : Attribute
 		{
@@ -53,6 +50,30 @@ namespace Utils
 			var customAttribute = fieldInfo.GetCustomAttribute<A>();
 
 			return customAttribute;
+		}
+
+		/// <summary>
+		/// Get enum value based on menu display name
+		/// </summary>
+		/// <typeparam name="E">Enum type</typeparam>
+		/// <param name="menuDisplayName">Menu display name to find</param>
+		/// <returns>
+		/// Enum value - if provided menu display name exists
+		/// null - otherwise
+		/// </returns>
+		public static E? GetValueFromMenuDisplayName<E>(string menuDisplayName)
+			where E : struct, Enum
+		{
+			foreach (var fieldInfo in typeof(E).GetFields())
+			{
+				if (Attribute.GetCustomAttribute(fieldInfo, typeof(MenuDisplayNameAttribute)) is MenuDisplayNameAttribute attribute)
+				{
+					if (attribute.MenuDisplayName.Equals(menuDisplayName))
+						return (E?)fieldInfo.GetValue(null);
+				}
+			}
+
+			return null;
 		}
 	}
 
