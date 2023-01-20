@@ -26,6 +26,8 @@ namespace Receiver
 				return;
 			}
 
+			Console.Title = $"{receiverTypeName} Receiver";
+
 			// Build configuration file
 			var builder = new ConfigurationBuilder()
 				.AddJsonFile($"appsettings.{MessageBusType.GetDescription()}.json", false, true);

@@ -26,6 +26,8 @@ namespace Sender
 				return;
 			}
 
+			Console.Title = $"{senderTypeName} Sender";
+
 			// Build configuration file
 			var builder = new ConfigurationBuilder()
 				.AddJsonFile($"appsettings.{MessageBusType.GetDescription()}.json", false, true);
