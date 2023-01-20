@@ -1,0 +1,28 @@
+{
+	"profiles": {
+		"AzureServiceBusSender": {
+			"commandName": "Project",
+			"environmentVariables": {
+				"MESSAGE_BUS_SENDER_TYPE": "AzureServiceBus"
+			}
+		},
+		"RabbitMQSender": {
+			"commandName": "Project",
+			"environmentVariables": {
+				"MESSAGE_BUS_SENDER_TYPE": "RabbitMQ"
+			}
+		},
+		"NServiceBusAzureServiceBusSender": {
+			"commandName": "Project",
+			"environmentVariables": {
+				"MESSAGE_BUS_SENDER_TYPE": "NServiceBusAzureServiceBus"
+			}
+		},
+		"NServiceBusRabbitMQSender": {
+			"commandName": "Project",
+			"environmentVariables": {
+				"MESSAGE_BUS_SENDER_TYPE": "NServiceBusRabbitMQ"
+			}
+		}
+	}
+}

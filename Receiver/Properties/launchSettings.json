@@ -1,0 +1,28 @@
+{
+	"profiles": {
+		"AzureServiceBusReceiver": {
+			"commandName": "Project",
+			"environmentVariables": {
+				"MESSAGE_BUS_RECEIVER_TYPE": "AzureServiceBus"
+			}
+		},
+		"RabbitMQReceiver": {
+			"commandName": "Project",
+			"environmentVariables": {
+				"MESSAGE_BUS_RECEIVER_TYPE": "RabbitMQ"
+			}
+		},
+		"NServiceBusAzureServiceBusReceiver": {
+			"commandName": "Project",
+			"environmentVariables": {
+				"MESSAGE_BUS_RECEIVER_TYPE": "NServiceBusAzureServiceBus"
+			}
+		},
+		"NServiceBusRabbitMQReceiver": {
+			"commandName": "Project",
+			"environmentVariables": {
+				"MESSAGE_BUS_RECEIVER_TYPE": "NServiceBusRabbitMQ"
+			}
+		}
+	}
+}
