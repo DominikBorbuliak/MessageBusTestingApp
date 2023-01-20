@@ -1,19 +1,23 @@
-﻿using System.ComponentModel;
+﻿using Utils;
 
 namespace Services.Models
 {
 	public enum MessageBusType
 	{
-		[Description("azure-service-bus")]
+		[ConfigurationName("azure-service-bus")]
+		[MenuDisplayName("Azure Service Bus")]
 		AzureServiceBus,
 
-		[Description("rabbit-mq")]
+		[ConfigurationName("rabbit-mq")]
+		[MenuDisplayName("Rabbit MQ")]
 		RabbitMQ,
 
-		[Description("n-service-bus-azure-service-bus")]
+		[ConfigurationName("n-service-bus-azure-service-bus")]
+		[MenuDisplayName("N Service Bus & Azure Service Bus")]
 		NServiceBusAzureServiceBus,
 
-		[Description("n-service-bus-rabbit-mq")]
+		[ConfigurationName("n-service-bus-rabbit-mq")]
+		[MenuDisplayName("N Service Bus & Rabbit MQ")]
 		NServiceBusRabbitMQ
 	}
 }

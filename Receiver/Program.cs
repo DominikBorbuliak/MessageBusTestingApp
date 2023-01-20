@@ -30,7 +30,7 @@ namespace Receiver
 
 			// Build configuration file
 			var builder = new ConfigurationBuilder()
-				.AddJsonFile($"appsettings.{MessageBusType.GetDescription()}.json", false, true);
+				.AddJsonFile($"appsettings.{MessageBusType.GetConfigurationName()}.json", false, true);
 
 			Configuration = builder.Build();
 
@@ -69,7 +69,7 @@ namespace Receiver
 					services.AddSingleton<IReceiverService>(x => new NServiceBusAzureServiceBusReceiver(Configuration));
 					break;
 				default:
-					throw new NotImplementedException($"{MessageBusType.GetDescription()} is not yet implemented!");
+					throw new NotImplementedException($"{MessageBusType} is not yet implemented!");
 			}
 
 			services.AddSingleton<Application>();
