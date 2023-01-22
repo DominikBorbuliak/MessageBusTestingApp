@@ -2,7 +2,9 @@
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using Services.Contracts;
+using Services.Models;
 using System.Text;
+using System.Text.Json;
 using Utils;
 
 namespace Services.Services
@@ -62,7 +64,15 @@ namespace Services.Services
 		{
 			var body = Encoding.UTF8.GetString(arguments.Body.ToArray());
 
-			ConsoleUtils.WriteLineColor($"Messsage received: {body}", ConsoleColor.Green);
+			try
+			{
+				var advancedMessage = JsonSerializer.Deserialize<AdvancedMessage>(body);
+				ConsoleUtils.WriteLineColor($"Advanced messsage received:\n{advancedMessage}", ConsoleColor.Green);
+			}
+			catch
+			{
+				ConsoleUtils.WriteLineColor($"Simple messsage received: {body}", ConsoleColor.Green);
+			}
 		}
 	}
 }

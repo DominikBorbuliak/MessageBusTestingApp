@@ -1,9 +1,10 @@
 ﻿using Azure.Messaging.ServiceBus;
+using System.Text;
 using System.Text.Json;
 
 namespace Services.Models
 {
-	public class AdvancedMessage
+	public class AdvancedMessage : IMessage
 	{
 		public string Name { get; set; } = string.Empty;
 		public string Surname { get; set; } = string.Empty;
@@ -11,6 +12,26 @@ namespace Services.Models
 		public string Email { get; set; } = string.Empty;
 		public string Description { get; set; } = string.Empty;
 		public AdvancedMessageAddress Address { get; set; } = new AdvancedMessageAddress();
+
+		public override string ToString()
+		{
+			var stringBuilder = new StringBuilder();
+
+			stringBuilder.AppendLine($"Name: {Name}");
+			stringBuilder.AppendLine($"Surname: {Surname}");
+			stringBuilder.AppendLine($"Age: {Age}");
+			stringBuilder.AppendLine($"Email: {Email}");
+			stringBuilder.AppendLine($"Description: {Description}");
+
+			stringBuilder.AppendLine("Address:");
+			stringBuilder.AppendLine($"	StreetName: {Address.StreetName}");
+			stringBuilder.AppendLine($"	BuildingNumber: {Address.BuildingNumber}");
+			stringBuilder.AppendLine($"	City: {Address.City}");
+			stringBuilder.AppendLine($"	PostalCode: {Address.PostalCode}");
+			stringBuilder.AppendLine($"	Country: {Address.Country}");
+
+			return stringBuilder.ToString();
+		}
 	}
 
 	public class AdvancedMessageAddress
@@ -25,5 +46,6 @@ namespace Services.Models
 	public static class AdvancedMessageMapper
 	{
 		public static ServiceBusMessage ToServiceBusMessage(this AdvancedMessage advancedMessage) => new ServiceBusMessage(JsonSerializer.Serialize(advancedMessage));
+		public static byte[] ToRabbitMQMessage(this AdvancedMessage advancedMessage) => Encoding.UTF8.GetBytes(JsonSerializer.Serialize(advancedMessage));
 	}
 }

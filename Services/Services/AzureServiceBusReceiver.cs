@@ -1,6 +1,8 @@
 ﻿using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Configuration;
 using Services.Contracts;
+using Services.Models;
+using System.Text.Json;
 using Utils;
 
 namespace Services.Services
@@ -45,7 +47,15 @@ namespace Services.Services
 		{
 			var body = arguments.Message.Body.ToString();
 
-			ConsoleUtils.WriteLineColor($"Messsage received: {body}", ConsoleColor.Green);
+			try
+			{
+				var advancedMessage = JsonSerializer.Deserialize<AdvancedMessage>(body);
+				ConsoleUtils.WriteLineColor($"Advanced messsage received:\n{advancedMessage}", ConsoleColor.Green);
+			}
+			catch
+			{
+				ConsoleUtils.WriteLineColor($"Simple messsage received: {body}", ConsoleColor.Green);
+			}
 
 			await arguments.CompleteMessageAsync(arguments.Message);
 		}

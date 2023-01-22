@@ -102,9 +102,10 @@ namespace Services.Services
 			var n = ConsoleUtils.GetUserNumberInput("Please enter the number of messages you want to send:");
 
 			RandomMessageGenerator messageGenerator = new RandomMessageGenerator();
+			var randomMessages = messageGenerator.GetRandomSimpleMessages(n);
 
-			for (var i = 0; i < n; i++)
-				await _serviceBusSender.SendMessageAsync(messageGenerator.GetRandomSimpleMessage().ToServiceBusMessage());
+			foreach (var randomMessage in randomMessages)
+				await _serviceBusSender.SendMessageAsync(randomMessage.ToServiceBusMessage());
 		}
 
 		private async Task HandleSendOnlyNRandomAdvancedMessages()

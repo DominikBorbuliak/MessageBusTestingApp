@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace Services.Models
 {
@@ -21,10 +20,18 @@ namespace Services.Models
 			};
 		}
 
-		public SimpleMessage GetRandomSimpleMessage(int minLength = 1, int maxLength = 256) => new SimpleMessage
+		public List<SimpleMessage> GetRandomSimpleMessages(int n, int minLength = 1, int maxLength = 256)
 		{
-			Text = GenerateRandomText(minLength, maxLength)
-		};
+			var result = new List<SimpleMessage>();
+
+			for (var i = 0; i < n; i++)
+				result.Add(new SimpleMessage
+				{
+					Text = GenerateRandomText(minLength, maxLength)
+				});
+
+			return result;
+		}
 
 		public async Task<List<AdvancedMessage>> GetRandomAdvancedMessages(int n)
 		{

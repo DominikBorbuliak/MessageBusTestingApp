@@ -25,26 +25,34 @@ namespace Services.Services
 		{
 			try
 			{
-				_endpointConfiguration.ExecuteTheseHandlersFirst(typeof(NServiceBusAzureServiceBusHandler));
+				_endpointConfiguration.ExecuteTheseHandlersFirst(typeof(NServiceBusAzureServiceBusSimpleMessageHandler));
+				_endpointConfiguration.ExecuteTheseHandlersFirst(typeof(NServiceBusAzureServiceBusAdvancedMessageHandler));
 
 				_endpointInstance = await Endpoint.Start(_endpointConfiguration);
 
 				Console.WriteLine("Press any key to exit application and stop processing!");
 				Console.ReadKey();
-
-				await _endpointInstance.Stop();
 			}
 			finally
 			{
-
+				await _endpointInstance.Stop();
 			}
 		}
 	}
-	public class NServiceBusAzureServiceBusHandler : IHandleMessages<Message>
+	public class NServiceBusAzureServiceBusSimpleMessageHandler : IHandleMessages<SimpleMessage>
 	{
-		public Task Handle(Message message, IMessageHandlerContext context)
+		public Task Handle(SimpleMessage message, IMessageHandlerContext context)
 		{
-			ConsoleUtils.WriteLineColor($"Messsage received: {message.Text}", ConsoleColor.Green);
+			ConsoleUtils.WriteLineColor($"Simple messsage received: {message.Text}", ConsoleColor.Green);
+			return Task.CompletedTask;
+		}
+	}
+
+	public class NServiceBusAzureServiceBusAdvancedMessageHandler : IHandleMessages<AdvancedMessage>
+	{
+		public Task Handle(AdvancedMessage message, IMessageHandlerContext context)
+		{
+			ConsoleUtils.WriteLineColor($"Advanced messsage received: {message}", ConsoleColor.Green);
 			return Task.CompletedTask;
 		}
 	}
