@@ -67,10 +67,10 @@ namespace Receiver
 					services.AddSingleton<IReceiverService>(x => new RabbitMQReceiver(Configuration));
 					break;
 				case MessageBusType.NServiceBusRabbitMQ:
-					services.AddSingleton<IReceiverService>(x => new NServiceBusRabbitMQReceiver(Configuration));
+					services.AddSingleton<IReceiverService>(x => new NServiceBusReceiver(Configuration, false));
 					break;
 				case MessageBusType.NServiceBusAzureServiceBus:
-					services.AddSingleton<IReceiverService>(x => new NServiceBusAzureServiceBusReceiver(Configuration));
+					services.AddSingleton<IReceiverService>(x => new NServiceBusReceiver(Configuration, true));
 					break;
 				default:
 					throw new NotImplementedException($"{MessageBusType} is not yet implemented!");

@@ -5,23 +5,36 @@ using Utils;
 
 namespace Services.Services
 {
-	public class NServiceBusAzureServiceBusSender : ISenderService
+	public class NServiceBusSender : ISenderService
 	{
 		private readonly IEndpointInstance _endpointInstance;
 
-		public NServiceBusAzureServiceBusSender(IConfiguration configuration)
+		public NServiceBusSender(IConfiguration configuration, bool isAzureServiceBus)
 		{
 			var endpointConfiguration = new EndpointConfiguration(configuration.GetSection("ConnectionSettings")["SenderEndpointName"]);
 
-			var transport = endpointConfiguration.UseTransport<AzureServiceBusTransport>();
-			transport.ConnectionString(configuration.GetConnectionString("AzureServiceBus"));
-			transport.Routing().RouteToEndpoint(typeof(SimpleMessage), configuration.GetSection("ConnectionSettings")["ReceiverEndpointName"]);
-			transport.Routing().RouteToEndpoint(typeof(AdvancedMessage), configuration.GetSection("ConnectionSettings")["ReceiverEndpointName"]);
-			transport.TopicName(configuration.GetSection("ConnectionSettings")["TopicName"]);
+			if (isAzureServiceBus)
+			{
+				var transport = endpointConfiguration.UseTransport<AzureServiceBusTransport>();
 
-			endpointConfiguration.SendOnly();
+				transport.ConnectionString(configuration.GetConnectionString("AzureServiceBus"));
+				transport.Routing().RouteToEndpoint(typeof(SimpleMessage), configuration.GetSection("ConnectionSettings")["ReceiverEndpointName"]);
+				transport.Routing().RouteToEndpoint(typeof(AdvancedMessage), configuration.GetSection("ConnectionSettings")["ReceiverEndpointName"]);
+				transport.TopicName(configuration.GetSection("ConnectionSettings")["TopicName"]);
+
+				endpointConfiguration.SendOnly();
+			}
+			else
+			{
+				var transport = endpointConfiguration.UseTransport<RabbitMQTransport>();
+
+				transport.UseConventionalRoutingTopology(QueueType.Quorum);
+				transport.ConnectionString($"host={configuration.GetSection("ConnectionSettings")["HostName"]}");
+				transport.Routing().RouteToEndpoint(typeof(SimpleMessage), configuration.GetSection("ConnectionSettings")["ReceiverEndpointName"]);
+				transport.Routing().RouteToEndpoint(typeof(AdvancedMessage), configuration.GetSection("ConnectionSettings")["ReceiverEndpointName"]);
+			}
+
 			endpointConfiguration.EnableInstallers();
-
 			_endpointInstance = Endpoint.Start(endpointConfiguration).Result;
 		}
 

@@ -67,10 +67,10 @@ namespace Sender
 					services.AddSingleton<ISenderService>(x => new RabbitMQSender(Configuration));
 					break;
 				case MessageBusType.NServiceBusRabbitMQ:
-					services.AddSingleton<ISenderService>(x => new NServiceBusRabbitMQSender(Configuration));
+					services.AddSingleton<ISenderService>(x => new NServiceBusSender(Configuration, false));
 					break;
 				case MessageBusType.NServiceBusAzureServiceBus:
-					services.AddSingleton<ISenderService>(x => new NServiceBusAzureServiceBusSender(Configuration));
+					services.AddSingleton<ISenderService>(x => new NServiceBusSender(Configuration, true));
 					break;
 				default:
 					throw new NotImplementedException($"{MessageBusType} is not yet implemented!");

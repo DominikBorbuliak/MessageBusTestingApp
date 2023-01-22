@@ -5,18 +5,27 @@ using Utils;
 
 namespace Services.Services
 {
-	public class NServiceBusAzureServiceBusReceiver : IReceiverService
+	public class NServiceBusReceiver : IReceiverService
 	{
 		private readonly EndpointConfiguration _endpointConfiguration;
 		private IEndpointInstance _endpointInstance = null!;
 
-		public NServiceBusAzureServiceBusReceiver(IConfiguration configuration)
+		public NServiceBusReceiver(IConfiguration configuration, bool isAzureServiceBus)
 		{
 			_endpointConfiguration = new EndpointConfiguration(configuration.GetSection("ConnectionSettings")["ReceiverEndpointName"]);
 
-			var transport = _endpointConfiguration.UseTransport<AzureServiceBusTransport>();
-			transport.ConnectionString(configuration.GetConnectionString("AzureServiceBus"));
-			transport.TopicName(configuration.GetSection("ConnectionSettings")["TopicName"]);
+			if (isAzureServiceBus)
+			{
+				var transport = _endpointConfiguration.UseTransport<AzureServiceBusTransport>();
+				transport.ConnectionString(configuration.GetConnectionString("AzureServiceBus"));
+				transport.TopicName(configuration.GetSection("ConnectionSettings")["TopicName"]);
+			}
+			else
+			{
+				var transport = _endpointConfiguration.UseTransport<RabbitMQTransport>();
+				transport.UseConventionalRoutingTopology(QueueType.Quorum);
+				transport.ConnectionString($"host={configuration.GetSection("ConnectionSettings")["HostName"]}");
+			}
 
 			_endpointConfiguration.EnableInstallers();
 		}
@@ -25,8 +34,8 @@ namespace Services.Services
 		{
 			try
 			{
-				_endpointConfiguration.ExecuteTheseHandlersFirst(typeof(NServiceBusAzureServiceBusSimpleMessageHandler));
-				_endpointConfiguration.ExecuteTheseHandlersFirst(typeof(NServiceBusAzureServiceBusAdvancedMessageHandler));
+				_endpointConfiguration.ExecuteTheseHandlersFirst(typeof(NServiceBusSimpleMessageHandler));
+				_endpointConfiguration.ExecuteTheseHandlersFirst(typeof(NServiceBusAdvancedMessageHandler));
 
 				_endpointInstance = await Endpoint.Start(_endpointConfiguration);
 
@@ -39,7 +48,8 @@ namespace Services.Services
 			}
 		}
 	}
-	public class NServiceBusAzureServiceBusSimpleMessageHandler : IHandleMessages<SimpleMessage>
+
+	public class NServiceBusSimpleMessageHandler : IHandleMessages<SimpleMessage>
 	{
 		public Task Handle(SimpleMessage message, IMessageHandlerContext context)
 		{
@@ -48,7 +58,7 @@ namespace Services.Services
 		}
 	}
 
-	public class NServiceBusAzureServiceBusAdvancedMessageHandler : IHandleMessages<AdvancedMessage>
+	public class NServiceBusAdvancedMessageHandler : IHandleMessages<AdvancedMessage>
 	{
 		public Task Handle(AdvancedMessage message, IMessageHandlerContext context)
 		{
