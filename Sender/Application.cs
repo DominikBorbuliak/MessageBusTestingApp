@@ -1,10 +1,11 @@
 ﻿using Services.Contracts;
+using Services.Data;
 using Services.Models;
 using Utils;
 
 namespace Sender
 {
-	public class Application
+    public class Application
 	{
 		private readonly ISenderService _senderService;
 

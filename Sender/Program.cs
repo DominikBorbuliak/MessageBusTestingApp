@@ -1,13 +1,14 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Services.Contracts;
+using Services.Data;
 using Services.Models;
 using Services.Services;
 using Utils;
 
 namespace Sender
 {
-	public class Program
+    public class Program
 	{
 		private static IConfiguration Configuration { get; set; } = null!;
 		private static MessageBusType MessageBusType;
