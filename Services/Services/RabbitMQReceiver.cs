@@ -36,9 +36,9 @@ namespace Services.Services
 			_consumer = new EventingBasicConsumer(_channel);
 		}
 
-		public async Task Run()
+		public async Task StartJob()
 		{
-			try
+			await Task.Run(() =>
 			{
 				_consumer.Received += (_, eventArguments) => MessageHandler(eventArguments);
 
@@ -47,17 +47,18 @@ namespace Services.Services
 					autoAck: true,
 					consumer: _consumer
 				);
+			});
+		}
 
-				Console.WriteLine("Press any key to exit application and stop processing!");
-				Console.ReadKey();
-
-				_connection.Close();
-			}
-			finally
+		public async Task FinishJob()
+		{
+			await Task.Run(() =>
 			{
+				_connection.Close();
+
 				_channel.Dispose();
 				_connection.Dispose();
-			}
+			});
 		}
 
 		private void MessageHandler(BasicDeliverEventArgs arguments)

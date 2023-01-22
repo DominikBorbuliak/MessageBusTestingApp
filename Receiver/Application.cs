@@ -15,6 +15,19 @@ namespace Receiver
 		/// Run the whole application
 		/// </summary>
 		/// <returns></returns>
-		public async Task Run() => await _receiverService.Run();
+		public async Task Run()
+		{
+			try
+			{
+				await _receiverService.StartJob();
+
+				Console.WriteLine("Press any key to exit application and stop processing!");
+				Console.ReadKey();
+			}
+			finally
+			{
+				await _receiverService.FinishJob();
+			}
+		}
 	}
 }

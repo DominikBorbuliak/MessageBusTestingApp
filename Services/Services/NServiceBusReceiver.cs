@@ -30,40 +30,39 @@ namespace Services.Services
 			_endpointConfiguration.EnableInstallers();
 		}
 
-		public async Task Run()
+		public async Task StartJob()
 		{
-			try
-			{
-				_endpointConfiguration.ExecuteTheseHandlersFirst(typeof(NServiceBusSimpleMessageHandler));
-				_endpointConfiguration.ExecuteTheseHandlersFirst(typeof(NServiceBusAdvancedMessageHandler));
+			_endpointConfiguration.ExecuteTheseHandlersFirst(typeof(NServiceBusSimpleMessageHandler));
+			_endpointConfiguration.ExecuteTheseHandlersFirst(typeof(NServiceBusAdvancedMessageHandler));
 
-				_endpointInstance = await Endpoint.Start(_endpointConfiguration);
+			_endpointInstance = await Endpoint.Start(_endpointConfiguration);
+		}
 
-				Console.WriteLine("Press any key to exit application and stop processing!");
-				Console.ReadKey();
-			}
-			finally
-			{
-				await _endpointInstance.Stop();
-			}
+		public async Task FinishJob()
+		{
+			await _endpointInstance.Stop();
 		}
 	}
 
 	public class NServiceBusSimpleMessageHandler : IHandleMessages<SimpleMessage>
 	{
-		public Task Handle(SimpleMessage message, IMessageHandlerContext context)
+		public async Task Handle(SimpleMessage message, IMessageHandlerContext context)
 		{
-			ConsoleUtils.WriteLineColor($"Simple messsage received: {message.Text}", ConsoleColor.Green);
-			return Task.CompletedTask;
+			await Task.Run(() =>
+			{
+				ConsoleUtils.WriteLineColor($"Simple messsage received: {message.Text}", ConsoleColor.Green);
+			}, context.CancellationToken);
 		}
 	}
 
 	public class NServiceBusAdvancedMessageHandler : IHandleMessages<AdvancedMessage>
 	{
-		public Task Handle(AdvancedMessage message, IMessageHandlerContext context)
+		public async Task Handle(AdvancedMessage message, IMessageHandlerContext context)
 		{
-			ConsoleUtils.WriteLineColor($"Advanced messsage received: {message}", ConsoleColor.Green);
-			return Task.CompletedTask;
+			await Task.Run(() =>
+			{
+				ConsoleUtils.WriteLineColor($"Advanced messsage received: {message}", ConsoleColor.Green);
+			}, context.CancellationToken);
 		}
 	}
 }

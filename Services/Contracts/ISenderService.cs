@@ -1,11 +1,11 @@
-﻿namespace Services.Contracts
+﻿using Services.Models;
+
+namespace Services.Contracts
 {
 	public interface ISenderService
 	{
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <returns></returns>
-		Task Run();
+		Task SendSimpleMessage(SimpleMessage simpleMessage);
+		Task SendAdvancedMessage(AdvancedMessage advancedMessage);
+		Task FinishJob();
 	}
 }
