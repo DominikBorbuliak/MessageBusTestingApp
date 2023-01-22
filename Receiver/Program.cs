@@ -61,16 +61,16 @@ namespace Receiver
 			switch (MessageBusType)
 			{
 				case MessageBusType.AzureServiceBus:
-					services.AddSingleton<IReceiverService>(x => new AzureServiceBusReceiver(Configuration));
+					services.AddSingleton<IReceiverService>(x => new AzureServiceBusReceiverService(Configuration));
 					break;
 				case MessageBusType.RabbitMQ:
-					services.AddSingleton<IReceiverService>(x => new RabbitMQReceiver(Configuration));
+					services.AddSingleton<IReceiverService>(x => new RabbitMQReceiverService(Configuration));
 					break;
 				case MessageBusType.NServiceBusRabbitMQ:
-					services.AddSingleton<IReceiverService>(x => new NServiceBusReceiver(Configuration, false));
+					services.AddSingleton<IReceiverService>(x => new NServiceBusReceiverService(Configuration, false));
 					break;
 				case MessageBusType.NServiceBusAzureServiceBus:
-					services.AddSingleton<IReceiverService>(x => new NServiceBusReceiver(Configuration, true));
+					services.AddSingleton<IReceiverService>(x => new NServiceBusReceiverService(Configuration, true));
 					break;
 				default:
 					throw new NotImplementedException($"{MessageBusType} is not yet implemented!");

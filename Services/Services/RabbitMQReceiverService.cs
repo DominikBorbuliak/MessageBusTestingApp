@@ -9,13 +9,13 @@ using Utils;
 
 namespace Services.Services
 {
-	public class RabbitMQReceiver : IReceiverService
+	public class RabbitMQReceiverService : IReceiverService
 	{
 		private readonly IConnection _connection;
 		private readonly IModel _channel;
 		private readonly EventingBasicConsumer _consumer;
 
-		public RabbitMQReceiver(IConfiguration configuration)
+		public RabbitMQReceiverService(IConfiguration configuration)
 		{
 			var connectionFactory = new ConnectionFactory
 			{

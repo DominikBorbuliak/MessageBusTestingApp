@@ -61,16 +61,16 @@ namespace Sender
 			switch (MessageBusType)
 			{
 				case MessageBusType.AzureServiceBus:
-					services.AddSingleton<ISenderService>(x => new AzureServiceBusSender(Configuration));
+					services.AddSingleton<ISenderService>(x => new AzureServiceBusSenderService(Configuration));
 					break;
 				case MessageBusType.RabbitMQ:
-					services.AddSingleton<ISenderService>(x => new RabbitMQSender(Configuration));
+					services.AddSingleton<ISenderService>(x => new RabbitMQSenderService(Configuration));
 					break;
 				case MessageBusType.NServiceBusRabbitMQ:
-					services.AddSingleton<ISenderService>(x => new NServiceBusSender(Configuration, false));
+					services.AddSingleton<ISenderService>(x => new NServiceBusSenderService(Configuration, false));
 					break;
 				case MessageBusType.NServiceBusAzureServiceBus:
-					services.AddSingleton<ISenderService>(x => new NServiceBusSender(Configuration, true));
+					services.AddSingleton<ISenderService>(x => new NServiceBusSenderService(Configuration, true));
 					break;
 				default:
 					throw new NotImplementedException($"{MessageBusType} is not yet implemented!");

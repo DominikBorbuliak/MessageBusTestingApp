@@ -4,11 +4,11 @@ using Services.Models;
 
 namespace Services.Services
 {
-	public class NServiceBusSender : ISenderService
+	public class NServiceBusSenderService : ISenderService
 	{
 		private readonly IEndpointInstance _endpointInstance;
 
-		public NServiceBusSender(IConfiguration configuration, bool isAzureServiceBus)
+		public NServiceBusSenderService(IConfiguration configuration, bool isAzureServiceBus)
 		{
 			var endpointConfiguration = new EndpointConfiguration(configuration.GetSection("ConnectionSettings")["SenderEndpointName"]);
 

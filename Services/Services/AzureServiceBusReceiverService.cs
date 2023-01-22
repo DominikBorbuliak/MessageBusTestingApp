@@ -7,12 +7,12 @@ using Utils;
 
 namespace Services.Services
 {
-	public class AzureServiceBusReceiver : IReceiverService
+	public class AzureServiceBusReceiverService : IReceiverService
 	{
 		private readonly ServiceBusClient _serviceBusClient;
 		private readonly ServiceBusProcessor _serviceBusProcessor;
 
-		public AzureServiceBusReceiver(IConfiguration configuration)
+		public AzureServiceBusReceiverService(IConfiguration configuration)
 		{
 			_serviceBusClient = new ServiceBusClient(configuration.GetConnectionString("AzureServiceBus"), new ServiceBusClientOptions
 			{

@@ -5,12 +5,12 @@ using Services.Models;
 
 namespace Services.Services
 {
-	public class RabbitMQSender : ISenderService
+	public class RabbitMQSenderService : ISenderService
 	{
 		private readonly IConnection _connection;
 		private readonly IModel _channel;
 
-		public RabbitMQSender(IConfiguration configuration)
+		public RabbitMQSenderService(IConfiguration configuration)
 		{
 			var connectionFactory = new ConnectionFactory
 			{
