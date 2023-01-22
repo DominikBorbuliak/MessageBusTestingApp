@@ -5,12 +5,12 @@ using Utils;
 
 namespace Services.Services
 {
-	public class NServiceBusReceiver : IReceiverService
+	public class NServiceBusReceiverService : IReceiverService
 	{
 		private readonly EndpointConfiguration _endpointConfiguration;
 		private IEndpointInstance _endpointInstance = null!;
 
-		public NServiceBusReceiver(IConfiguration configuration, bool isAzureServiceBus)
+		public NServiceBusReceiverService(IConfiguration configuration, bool isAzureServiceBus)
 		{
 			_endpointConfiguration = new EndpointConfiguration(configuration.GetSection("ConnectionSettings")["ReceiverEndpointName"]);
 

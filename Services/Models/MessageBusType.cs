@@ -2,6 +2,9 @@
 
 namespace Services.Models
 {
+	/// <summary>
+	/// Enum used to determine which type of message bus should be used
+	/// </summary>
 	public enum MessageBusType
 	{
 		[ConfigurationName("azure-service-bus")]

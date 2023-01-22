@@ -1,7 +1,10 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Services.Models
+namespace Services.Data.Models
 {
+	/// <summary>
+	/// Model used to gather random users from: https://random-data-api.com/api/v2/
+	/// </summary>
 	public class RandomUserAPI
 	{
 		[JsonPropertyName("first_name")]

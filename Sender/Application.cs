@@ -1,10 +1,11 @@
 ﻿using Services.Contracts;
+using Services.Data;
 using Services.Models;
 using Utils;
 
 namespace Sender
 {
-	public class Application
+    public class Application
 	{
 		private readonly ISenderService _senderService;
 
@@ -60,6 +61,10 @@ namespace Sender
 			}
 		}
 
+		/// <summary>
+		/// Sends one custom (filled by user) simple message
+		/// </summary>
+		/// <returns></returns>
 		private async Task HandleSendOnlyOneCustomSimpleMessage()
 		{
 			var simpleMessage = new SimpleMessage
@@ -70,6 +75,10 @@ namespace Sender
 			await _senderService.SendSimpleMessage(simpleMessage);
 		}
 
+		/// <summary>
+		/// Sends one custom (filled by user) advanced message
+		/// </summary>
+		/// <returns></returns>
 		private async Task HandleSendOnlyOneCustomAdvancedMessage()
 		{
 			var advancedMessage = new AdvancedMessage
@@ -92,6 +101,10 @@ namespace Sender
 			await _senderService.SendAdvancedMessage(advancedMessage);
 		}
 
+		/// <summary>
+		/// Sends N randomly generated simple messages
+		/// </summary>
+		/// <returns></returns>
 		private async Task HandleSendOnlyNRandomSimpleMessages()
 		{
 			var n = ConsoleUtils.GetUserNumberInput("Please enter the number of messages you want to send:");
@@ -103,6 +116,10 @@ namespace Sender
 				await _senderService.SendSimpleMessage(randomMessage);
 		}
 
+		/// <summary>
+		/// Sends N randomly generated advanced messages
+		/// </summary>
+		/// <returns></returns>
 		private async Task HandleSendOnlyNRandomAdvancedMessages()
 		{
 			var n = ConsoleUtils.GetUserNumberInput("Please enter the number of messages you want to send:");

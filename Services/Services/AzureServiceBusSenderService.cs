@@ -5,12 +5,12 @@ using Services.Models;
 
 namespace Services.Services
 {
-	public class AzureServiceBusSender : ISenderService
+	public class AzureServiceBusSenderService : ISenderService
 	{
 		private readonly ServiceBusClient _serviceBusClient;
 		private readonly ServiceBusSender _serviceBusSender;
 
-		public AzureServiceBusSender(IConfiguration configuration)
+		public AzureServiceBusSenderService(IConfiguration configuration)
 		{
 			_serviceBusClient = new ServiceBusClient(configuration.GetConnectionString("AzureServiceBus"), new ServiceBusClientOptions()
 			{
