@@ -2,6 +2,10 @@
 
 namespace Services.Models
 {
+	/// <summary>
+	/// Class that displays menu based on enum
+	/// </summary>
+	/// <typeparam name="E">Enum with menu items</typeparam>
 	public class Menu<E> where E : struct, Enum
 	{
 		private const string ExitItemDisplayName = "Exit";
@@ -25,6 +29,9 @@ namespace Services.Models
 				_menuItems.Add(ExitItemDisplayName);
 		}
 
+		/// <summary>
+		/// Displays actual state of menu
+		/// </summary>
 		public void DisplayMenu()
 		{
 			Console.Clear();
@@ -53,6 +60,10 @@ namespace Services.Models
 			}
 		}
 
+		/// <summary>
+		/// Handles movement in menu with arrows
+		/// </summary>
+		/// <returns></returns>
 		public E? HandleMenuMovement()
 		{
 			ConsoleKey key;

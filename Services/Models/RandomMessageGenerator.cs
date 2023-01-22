@@ -2,6 +2,9 @@
 
 namespace Services.Models
 {
+	/// <summary>
+	/// Class used to gather random adresses and users
+	/// </summary>
 	public class RandomMessageGenerator
 	{
 		private const string RandomDataApiBaseUrl = "https://random-data-api.com/api/v2/";
@@ -20,6 +23,13 @@ namespace Services.Models
 			};
 		}
 
+		/// <summary>
+		/// Returns random simple messages
+		/// </summary>
+		/// <param name="n">Number of messages to return</param>
+		/// <param name="minLength">Minimum length of text field</param>
+		/// <param name="maxLength">Maximum length of text field</param>
+		/// <returns></returns>
 		public List<SimpleMessage> GetRandomSimpleMessages(int n, int minLength = 1, int maxLength = 256)
 		{
 			var result = new List<SimpleMessage>();
@@ -33,6 +43,11 @@ namespace Services.Models
 			return result;
 		}
 
+		/// <summary>
+		/// Returns random advanced messages
+		/// </summary>
+		/// <param name="n">Number of messages to return</param>
+		/// <returns></returns>
 		public async Task<List<AdvancedMessage>> GetRandomAdvancedMessages(int n)
 		{
 			var randomUsers = await GetRandomUsers(n);
@@ -66,6 +81,12 @@ namespace Services.Models
 			return result;
 		}
 
+		/// <summary>
+		/// Generates random text from alphanumerical character
+		/// </summary>
+		/// <param name="minLength">Minimum length of text</param>
+		/// <param name="maxLength">Maximum length of text</param>
+		/// <returns></returns>
 		private string GenerateRandomText(int minLength = 1, int maxLength = 256)
 		{
 			var result = string.Empty;
@@ -81,6 +102,12 @@ namespace Services.Models
 			return result;
 		}
 
+		/// <summary>
+		/// Gets random addresses
+		/// If Random API fails, generate addresses with random texts
+		/// </summary>
+		/// <param name="n">Number of addresses to return</param>
+		/// <returns></returns>
 		private async Task<List<RandomAddressAPI>> GetRandomAddresses(int n)
 		{
 			try
@@ -116,6 +143,12 @@ namespace Services.Models
 
 		}
 
+		/// <summary>
+		/// Gets random users
+		/// If Random API fails, generate users with random texts
+		/// </summary>
+		/// <param name="n">Number of users to return</param>
+		/// <returns></returns>
 		private async Task<List<RandomUserAPI>> GetRandomUsers(int n)
 		{
 			try

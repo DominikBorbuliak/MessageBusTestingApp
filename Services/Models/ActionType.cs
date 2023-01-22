@@ -2,6 +2,9 @@
 
 namespace Services.Models
 {
+	/// <summary>
+	/// Enum used to determine send action
+	/// </summary>
 	public enum ActionType
 	{
 		[MenuDisplayName("Send Only - 1 Custom Message - Simple")]

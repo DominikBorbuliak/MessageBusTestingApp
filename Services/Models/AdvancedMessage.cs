@@ -4,6 +4,9 @@ using System.Text.Json;
 
 namespace Services.Models
 {
+	/// <summary>
+	/// Model used to simulate bigger messages that need to be serialized before sending
+	/// </summary>
 	public class AdvancedMessage : IMessage
 	{
 		public string Name { get; set; } = string.Empty;
@@ -43,6 +46,9 @@ namespace Services.Models
 		public string Country { get; set; } = string.Empty;
 	}
 
+	/// <summary>
+	/// Mapper class to format advanced message to required format
+	/// </summary>
 	public static class AdvancedMessageMapper
 	{
 		public static ServiceBusMessage ToServiceBusMessage(this AdvancedMessage advancedMessage) => new ServiceBusMessage(JsonSerializer.Serialize(advancedMessage));

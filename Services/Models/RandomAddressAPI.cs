@@ -2,6 +2,9 @@
 
 namespace Services.Models
 {
+	/// <summary>
+	/// Model used to gather random adresses from: https://random-data-api.com/api/v2/
+	/// </summary>
 	public class RandomAddressAPI
 	{
 		[JsonPropertyName("street_name")]
