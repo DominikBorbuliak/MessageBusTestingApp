@@ -1,6 +1,8 @@
 ﻿using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Configuration;
 using Services.Contracts;
+using Services.Models;
+using System.Text.Json;
 using Utils;
 
 namespace Services.Services
@@ -20,39 +22,45 @@ namespace Services.Services
 			_serviceBusProcessor = _serviceBusClient.CreateProcessor(configuration.GetSection("ConnectionSettings")["QueueName"], new ServiceBusProcessorOptions());
 		}
 
-		public async Task Run()
+		public async Task StartJob()
 		{
-			try
-			{
-				_serviceBusProcessor.ProcessMessageAsync += MessageHandler;
-				_serviceBusProcessor.ProcessErrorAsync += ErrorHandler;
+			_serviceBusProcessor.ProcessMessageAsync += MessageHandler;
+			_serviceBusProcessor.ProcessErrorAsync += ErrorHandler;
 
-				await _serviceBusProcessor.StartProcessingAsync();
+			await _serviceBusProcessor.StartProcessingAsync();
+		}
 
-				Console.WriteLine("Press any key to exit application and stop processing!");
-				Console.ReadKey();
+		public async Task FinishJob()
+		{
+			await _serviceBusProcessor.StopProcessingAsync();
 
-				await _serviceBusProcessor.StopProcessingAsync();
-			}
-			finally
-			{
-				await _serviceBusProcessor.DisposeAsync();
-				await _serviceBusClient.DisposeAsync();
-			}
+			await _serviceBusProcessor.DisposeAsync();
+			await _serviceBusClient.DisposeAsync();
 		}
 
 		private async Task MessageHandler(ProcessMessageEventArgs arguments)
 		{
 			var body = arguments.Message.Body.ToString();
 
-			ConsoleUtils.WriteLineColor($"Messsage received: {body}", ConsoleColor.Green);
+			try
+			{
+				var advancedMessage = JsonSerializer.Deserialize<AdvancedMessage>(body);
+				ConsoleUtils.WriteLineColor($"Advanced messsage received:\n{advancedMessage}", ConsoleColor.Green);
+			}
+			catch
+			{
+				ConsoleUtils.WriteLineColor($"Simple messsage received: {body}", ConsoleColor.Green);
+			}
 
 			await arguments.CompleteMessageAsync(arguments.Message);
 		}
 
 		private async Task ErrorHandler(ProcessErrorEventArgs args)
 		{
-			ConsoleUtils.WriteLineColor($"Exception occured: {args.Exception}", ConsoleColor.Red);
+			await Task.Run(() =>
+			{
+				ConsoleUtils.WriteLineColor($"Exception occured: {args.Exception}", ConsoleColor.Red);
+			});
 		}
 	}
 }

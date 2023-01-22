@@ -2,10 +2,7 @@
 {
 	public interface IReceiverService
 	{
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <returns></returns>
-		Task Run();
+		Task StartJob();
+		Task FinishJob();
 	}
 }

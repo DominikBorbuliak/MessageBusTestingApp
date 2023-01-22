@@ -17,20 +17,24 @@ namespace Receiver
 			// Setup console
 			Console.BackgroundColor = ConsoleColor.Black;
 			Console.ForegroundColor = ConsoleColor.White;
+			Console.CursorVisible = false;
+			Console.Title = "Receiver";
 
-			// Verificate message bus type
-			var receiverTypeName = Environment.GetEnvironmentVariable(Constants.EnvironmentVariables.MessageBusReceiverType);
-			if (!Enum.TryParse(receiverTypeName, false, out MessageBusType))
-			{
-				ConsoleUtils.WriteLineColor($"Receiver type '{receiverTypeName}' is currently not supported!", ConsoleColor.Red);
+			// Display main menu
+			Menu<MessageBusType> mainMenu = new Menu<MessageBusType>("Please select message bus receiver type", "Use arrow DOWN and UP to navigate through menu.\nPress ENTER to submit.", true);
+			var pickedMainMenuItem = mainMenu.HandleMenuMovement();
+
+			// Exit was selected
+			if (pickedMainMenuItem == null)
 				return;
-			}
 
-			Console.Title = $"{receiverTypeName} Receiver";
+			MessageBusType = (MessageBusType)pickedMainMenuItem;
+			Console.Clear();
+			Console.Title = $"{MessageBusType.GetMenuDisplayName()} Receiver";
 
 			// Build configuration file
 			var builder = new ConfigurationBuilder()
-				.AddJsonFile($"appsettings.{MessageBusType.GetDescription()}.json", false, true);
+				.AddJsonFile($"appsettings.{MessageBusType.GetConfigurationName()}.json", false, true);
 
 			Configuration = builder.Build();
 
@@ -63,13 +67,13 @@ namespace Receiver
 					services.AddSingleton<IReceiverService>(x => new RabbitMQReceiver(Configuration));
 					break;
 				case MessageBusType.NServiceBusRabbitMQ:
-					services.AddSingleton<IReceiverService>(x => new NServiceBusRabbitMQReceiver(Configuration));
+					services.AddSingleton<IReceiverService>(x => new NServiceBusReceiver(Configuration, false));
 					break;
 				case MessageBusType.NServiceBusAzureServiceBus:
-					services.AddSingleton<IReceiverService>(x => new NServiceBusAzureServiceBusReceiver(Configuration));
+					services.AddSingleton<IReceiverService>(x => new NServiceBusReceiver(Configuration, true));
 					break;
 				default:
-					throw new NotImplementedException($"{MessageBusType.GetDescription()} is not yet implemented!");
+					throw new NotImplementedException($"{MessageBusType} is not yet implemented!");
 			}
 
 			services.AddSingleton<Application>();

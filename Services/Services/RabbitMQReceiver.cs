@@ -2,7 +2,9 @@
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using Services.Contracts;
+using Services.Models;
 using System.Text;
+using System.Text.Json;
 using Utils;
 
 namespace Services.Services
@@ -34,9 +36,9 @@ namespace Services.Services
 			_consumer = new EventingBasicConsumer(_channel);
 		}
 
-		public async Task Run()
+		public async Task StartJob()
 		{
-			try
+			await Task.Run(() =>
 			{
 				_consumer.Received += (_, eventArguments) => MessageHandler(eventArguments);
 
@@ -45,24 +47,33 @@ namespace Services.Services
 					autoAck: true,
 					consumer: _consumer
 				);
+			});
+		}
 
-				Console.WriteLine("Press any key to exit application and stop processing!");
-				Console.ReadKey();
-
-				_connection.Close();
-			}
-			finally
+		public async Task FinishJob()
+		{
+			await Task.Run(() =>
 			{
+				_connection.Close();
+
 				_channel.Dispose();
 				_connection.Dispose();
-			}
+			});
 		}
 
 		private void MessageHandler(BasicDeliverEventArgs arguments)
 		{
 			var body = Encoding.UTF8.GetString(arguments.Body.ToArray());
 
-			ConsoleUtils.WriteLineColor($"Messsage received: {body}", ConsoleColor.Green);
+			try
+			{
+				var advancedMessage = JsonSerializer.Deserialize<AdvancedMessage>(body);
+				ConsoleUtils.WriteLineColor($"Advanced messsage received:\n{advancedMessage}", ConsoleColor.Green);
+			}
+			catch
+			{
+				ConsoleUtils.WriteLineColor($"Simple messsage received: {body}", ConsoleColor.Green);
+			}
 		}
 	}
 }

@@ -1,5 +1,4 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Description = System.ComponentModel.DescriptionAttribute;
 
 namespace Utils.Tests
 {
@@ -7,17 +6,53 @@ namespace Utils.Tests
 	public class EnumUtilsTests
 	{
 		[TestMethod()]
-		public void GetDescriptionTest()
+		public void GetConfigurationNameTest()
 		{
 			// Basic test cases
-			Assert.AreEqual(string.Empty, TestEnumA.TypeA1.GetDescription());
-			Assert.AreEqual(string.Empty, TestEnumA.TypeA2.GetDescription());
-			Assert.AreEqual("TypeA3Description", TestEnumA.TypeA3.GetDescription());
-			Assert.AreEqual("TypeA4Description", TestEnumA.TypeA4.GetDescription());
+			Assert.AreEqual(string.Empty, TestEnumA.TypeA1.GetConfigurationName());
+			Assert.AreEqual(string.Empty, TestEnumA.TypeA2.GetConfigurationName());
+			Assert.AreEqual("TypeA3ConfigurationName", TestEnumA.TypeA3.GetConfigurationName());
+			Assert.AreEqual("TypeA4ConfigurationName", TestEnumA.TypeA4.GetConfigurationName());
 
 			// Advanced test cases
-			Assert.AreEqual("TypeB1Description", ((TestEnumB) TestEnumA.TypeA1).GetDescription());
-			Assert.AreEqual(null, ((TestEnumB) TestEnumA.TypeA2).GetDescription());
+			Assert.AreEqual("TypeB1ConfigurationName", ((TestEnumB)TestEnumA.TypeA1).GetConfigurationName());
+			Assert.ThrowsException<ArgumentException>(() => ((TestEnumB)TestEnumA.TypeA2).GetConfigurationName());
+		}
+
+		[TestMethod()]
+		public void GetMenuDisplayNameTest()
+		{
+			// Basic test cases
+			Assert.AreEqual(string.Empty, TestEnumA.TypeA1.GetMenuDisplayName());
+			Assert.AreEqual(string.Empty, TestEnumA.TypeA2.GetMenuDisplayName());
+			Assert.AreEqual("TypeA3MenuDisplayName", TestEnumA.TypeA3.GetMenuDisplayName());
+			Assert.AreEqual("TypeA4MenuDisplayName", TestEnumA.TypeA4.GetMenuDisplayName());
+
+			// Advanced test cases
+			Assert.AreEqual("TypeB1MenuDisplayName", ((TestEnumB)TestEnumA.TypeA1).GetMenuDisplayName());
+			Assert.ThrowsException<ArgumentException>(() => ((TestEnumB)TestEnumA.TypeA2).GetMenuDisplayName());
+		}
+
+		[TestMethod()]
+		public void GetValueFromMenuDisplayNameTest()
+		{
+			var resultA = EnumUtils.GetValueFromMenuDisplayName<TestEnumA>("TypeA3MenuDisplayName");
+			Assert.IsNotNull(resultA);
+			Assert.AreEqual(TestEnumA.TypeA3, (TestEnumA)resultA);
+
+			resultA = EnumUtils.GetValueFromMenuDisplayName<TestEnumA>(string.Empty);
+			Assert.IsNotNull(resultA);
+			Assert.AreEqual(TestEnumA.TypeA2, (TestEnumA)resultA);
+
+			resultA = EnumUtils.GetValueFromMenuDisplayName<TestEnumA>("TypeANotExistingMenuDisplayName");
+			Assert.IsNull(resultA);
+
+			var resultB = EnumUtils.GetValueFromMenuDisplayName<TestEnumB>("TypeB1MenuDisplayName");
+			Assert.IsNotNull(resultB);
+			Assert.AreEqual(TestEnumB.TypeB1, (TestEnumB)resultB);
+
+			resultB = EnumUtils.GetValueFromMenuDisplayName<TestEnumB>("TypeBNotExistingMenuDisplayName");
+			Assert.IsNull(resultB);
 		}
 	}
 
@@ -28,13 +63,16 @@ namespace Utils.Tests
 	{
 		TypeA1,
 
-		[@Description("")]
+		[ConfigurationName("")]
+		[MenuDisplayName("")]
 		TypeA2,
 
-		[@Description("TypeA3Description")]
+		[ConfigurationName("TypeA3ConfigurationName")]
+		[MenuDisplayName("TypeA3MenuDisplayName")]
 		TypeA3,
 
-		[@Description("TypeA4Description")]
+		[ConfigurationName("TypeA4ConfigurationName")]
+		[MenuDisplayName("TypeA4MenuDisplayName")]
 		TypeA4
 	}
 
@@ -43,7 +81,8 @@ namespace Utils.Tests
 	/// </summary>
 	public enum TestEnumB
 	{
-		[@Description("TypeB1Description")]
+		[ConfigurationName("TypeB1ConfigurationName")]
+		[MenuDisplayName("TypeB1MenuDisplayName")]
 		TypeB1
 	}
 }

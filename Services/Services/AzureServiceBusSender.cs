@@ -1,7 +1,7 @@
 ﻿using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Configuration;
 using Services.Contracts;
-using Utils;
+using Services.Models;
 
 namespace Services.Services
 {
@@ -20,27 +20,18 @@ namespace Services.Services
 			_serviceBusSender = _serviceBusClient.CreateSender(configuration.GetSection("ConnectionSettings")["QueueName"]);
 		}
 
-		public async Task Run()
+		public async Task SendSimpleMessage(SimpleMessage simpleMessage)
 		{
-			string? message;
+			await _serviceBusSender.SendMessageAsync(simpleMessage.ToServiceBusMessage());
+		}
 
-			do
-			{
-				Console.WriteLine("Press enter to exit application or type text of the message!");
-				message = Console.ReadLine();
+		public async Task SendAdvancedMessage(AdvancedMessage advancedMessage)
+		{
+			await _serviceBusSender.SendMessageAsync(advancedMessage.ToServiceBusMessage());
+		}
 
-				if (!string.IsNullOrEmpty(message))
-				{
-					await _serviceBusSender.SendMessageAsync(new ServiceBusMessage(message));
-					ConsoleUtils.WriteLineColor("Message was successfully send to queue!\n", ConsoleColor.Green);
-				}
-				else
-				{
-					ConsoleUtils.WriteLineColor("Application was successfully closed!", ConsoleColor.Green);
-				}
-
-			} while (!string.IsNullOrEmpty(message));
-
+		public async Task FinishJob()
+		{
 			await _serviceBusSender.DisposeAsync();
 			await _serviceBusClient.DisposeAsync();
 		}
