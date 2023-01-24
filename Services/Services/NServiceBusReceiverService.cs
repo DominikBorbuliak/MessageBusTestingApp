@@ -7,40 +7,40 @@ namespace Services.Services
 {
 	public class NServiceBusReceiverService : IReceiverService
 	{
-		private readonly EndpointConfiguration _endpointConfiguration;
-		private IEndpointInstance _endpointInstance = null!;
+		private readonly EndpointConfiguration _sendOnlyEndpointConfiguration;
+		private IEndpointInstance _sendOnlyEndpointInstance = null!;
 
 		public NServiceBusReceiverService(IConfiguration configuration, bool isAzureServiceBus)
 		{
-			_endpointConfiguration = new EndpointConfiguration(configuration.GetSection("ConnectionSettings")["ReceiverEndpointName"]);
+			_sendOnlyEndpointConfiguration = new EndpointConfiguration(configuration.GetSection("ConnectionSettings")["SendOnlyReceiverEndpointName"]);
 
 			if (isAzureServiceBus)
 			{
-				var transport = _endpointConfiguration.UseTransport<AzureServiceBusTransport>();
+				var transport = _sendOnlyEndpointConfiguration.UseTransport<AzureServiceBusTransport>();
 				transport.ConnectionString(configuration.GetConnectionString("AzureServiceBus"));
 				transport.TopicName(configuration.GetSection("ConnectionSettings")["TopicName"]);
 			}
 			else
 			{
-				var transport = _endpointConfiguration.UseTransport<RabbitMQTransport>();
+				var transport = _sendOnlyEndpointConfiguration.UseTransport<RabbitMQTransport>();
 				transport.UseConventionalRoutingTopology(QueueType.Quorum);
 				transport.ConnectionString($"host={configuration.GetSection("ConnectionSettings")["HostName"]}");
 			}
 
-			_endpointConfiguration.EnableInstallers();
+			_sendOnlyEndpointConfiguration.EnableInstallers();
 		}
 
 		public async Task StartJob()
 		{
-			_endpointConfiguration.ExecuteTheseHandlersFirst(typeof(NServiceBusSimpleMessageHandler));
-			_endpointConfiguration.ExecuteTheseHandlersFirst(typeof(NServiceBusAdvancedMessageHandler));
+			_sendOnlyEndpointConfiguration.ExecuteTheseHandlersFirst(typeof(NServiceBusSimpleMessageHandler));
+			_sendOnlyEndpointConfiguration.ExecuteTheseHandlersFirst(typeof(NServiceBusAdvancedMessageHandler));
 
-			_endpointInstance = await Endpoint.Start(_endpointConfiguration);
+			_sendOnlyEndpointInstance = await Endpoint.Start(_sendOnlyEndpointConfiguration);
 		}
 
 		public async Task FinishJob()
 		{
-			await _endpointInstance.Stop();
+			await _sendOnlyEndpointInstance.Stop();
 		}
 	}
 
