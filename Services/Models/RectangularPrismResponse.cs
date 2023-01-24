@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Services.Models
 {
-	public class RectangularPrismResponse
+	public class RectangularPrismResponse : IMessage
 	{
 		public double SurfaceArea { get; set; }
 		public double Volume { get; set; }

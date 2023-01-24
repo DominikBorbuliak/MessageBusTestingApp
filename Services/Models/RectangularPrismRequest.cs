@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Services.Models
 {
-	public class RectangularPrismRequest
+	public class RectangularPrismRequest : IMessage
 	{
 		public double EdgeA { get; set; }
 		public double EdgeB { get; set; }
