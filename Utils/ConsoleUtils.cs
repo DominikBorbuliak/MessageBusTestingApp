@@ -53,11 +53,11 @@
 		}
 
 		/// <summary>
-		/// Gets number input from user
+		/// Gets integer input from user
 		/// </summary>
 		/// <param name="prompt">Promt to be asked</param>
 		/// <returns></returns>
-		public static int GetUserNumberInput(string prompt)
+		public static int GetUserIntegerInput(string prompt)
 		{
 			string? input = null;
 
@@ -68,6 +68,24 @@
 			}
 
 			return int.Parse(input);
+		}
+
+		/// <summary>
+		/// Gets double input from user
+		/// </summary>
+		/// <param name="prompt">Promt to be asked</param>
+		/// <returns></returns>
+		public static double GetUserDoubleInput(string prompt)
+		{
+			string? input = null;
+
+			while (string.IsNullOrEmpty(input) || !double.TryParse(input, out _))
+			{
+				Console.WriteLine(prompt);
+				input = Console.ReadLine();
+			}
+
+			return double.Parse(input);
 		}
 	}
 }

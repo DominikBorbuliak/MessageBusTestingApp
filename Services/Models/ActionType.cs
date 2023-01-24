@@ -19,16 +19,7 @@ namespace Services.Models
 		[MenuDisplayName("Send Only - N Random Messages - Advanced")]
 		SendOnlyNRandomAdvancedMessages,
 
-		[MenuDisplayName("Send & Reply - 1 Custom Message - Simple")]
-		SendAndReplyOneCustomSimpleMessage,
-
-		[MenuDisplayName("Send & Reply - 1 Custom Message - Advanced")]
-		SendAndReplyOneCustomAdvancedMessage,
-
-		[MenuDisplayName("Send & Reply - N Random Messages - Simple")]
-		SendAndReplyNRandomSimpleMessages,
-
-		[MenuDisplayName("Send & Reply - N Random Messages - Advanced")]
-		SendAndReplyNRandomAdvancedMessages
+		[MenuDisplayName("Send & Reply - Surface area and Volume of Rectangular Prism")]
+		SendAndReplyRectangularPrism
 	}
 }

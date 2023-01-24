@@ -4,6 +4,7 @@ using RabbitMQ.Client.Events;
 using Services.Contracts;
 using Services.Models;
 using System.Text;
+using System.Text.Json;
 using Utils;
 
 namespace Services.Services
@@ -11,12 +12,13 @@ namespace Services.Services
 	public class RabbitMQSenderService : ISenderService
 	{
 		private readonly IConnection _connection;
-		private readonly IModel _channel;
 
-		private readonly IModel _replyChannel;
-		private readonly EventingBasicConsumer _consumer;
-		private readonly IBasicProperties _props;
-		private readonly Guid _correlationId;
+		private readonly IModel _sendOnlyChannel;
+
+		private readonly IModel _sendAndReplyChannel;
+		private readonly EventingBasicConsumer _sendAndReplyConsumer;
+		private readonly IBasicProperties _sendAndReplyProps;
+		private readonly Guid _sendAndReplyCorrelationId;
 
 		public RabbitMQSenderService(IConfiguration configuration)
 		{
@@ -26,43 +28,38 @@ namespace Services.Services
 			};
 
 			_connection = connectionFactory.CreateConnection();
-			_channel = _connection.CreateModel();
+			_sendOnlyChannel = _connection.CreateModel();
 
-			_channel.QueueDeclare(
-				queue: configuration.GetSection("ConnectionSettings")["QueueName"],
+			_sendOnlyChannel.QueueDeclare(
+				queue: configuration.GetSection("ConnectionSettings")["SendOnlyReceiverQueueName"],
 				durable: false,
 				exclusive: false,
 				autoDelete: false,
 				arguments: null
 			);
 
-			_replyChannel = _connection.CreateModel();
+			_sendAndReplyChannel = _connection.CreateModel();
 
-			_replyChannel.QueueDeclare(
-				queue: configuration.GetSection("ConnectionSettings")["ReplySenderQueueName"],
+			_sendAndReplyChannel.QueueDeclare(
+				queue: configuration.GetSection("ConnectionSettings")["SendAndReplySenderQueueName"],
 				durable: false,
 				exclusive: false,
 				autoDelete: false,
 				arguments: null
 			);
 
-			_consumer = new EventingBasicConsumer(_replyChannel);
-			_props = _replyChannel.CreateBasicProperties();
-			_correlationId = Guid.NewGuid();
-			_props.CorrelationId = _correlationId.ToString();
+			_sendAndReplyConsumer = new EventingBasicConsumer(_sendAndReplyChannel);
+			_sendAndReplyProps = _sendAndReplyChannel.CreateBasicProperties();
+			_sendAndReplyCorrelationId = Guid.NewGuid();
+			_sendAndReplyProps.CorrelationId = _sendAndReplyCorrelationId.ToString();
 
-			_props.ReplyTo = configuration.GetSection("ConnectionSettings")["ReplySenderQueueName"];
+			_sendAndReplyProps.ReplyTo = configuration.GetSection("ConnectionSettings")["SendAndReplySenderQueueName"];
 
-			_consumer.Received += (model, ea) =>
-			{
-				var body = ea.Body.ToArray();
-				var response = Encoding.UTF8.GetString(body);
-				ConsoleUtils.WriteLineColor($"Reply from simple/advanced message: {response}", ConsoleColor.Green);
-			};
+			_sendAndReplyConsumer.Received += (_, ea) => RectangularPrismResponseHandler(ea);
 
-			_replyChannel.BasicConsume(
-				consumer: _consumer,
-				queue: configuration.GetSection("ConnectionSettings")["ReplySenderQueueName"],
+			_sendAndReplyChannel.BasicConsume(
+				consumer: _sendAndReplyConsumer,
+				queue: configuration.GetSection("ConnectionSettings")["SendAndReplySenderQueueName"],
 				autoAck: true
 			);
 		}
@@ -71,9 +68,9 @@ namespace Services.Services
 		{
 			await Task.Run(() =>
 			{
-				_channel.BasicPublish(
+				_sendOnlyChannel.BasicPublish(
 					exchange: "",
-					routingKey: "nativereceiver",
+					routingKey: "nativesendonlyreceiver",
 					basicProperties: null,
 					body: simpleMessage.ToRabbitMQMessage()
 				);
@@ -84,37 +81,24 @@ namespace Services.Services
 		{
 			await Task.Run(() =>
 			{
-				_channel.BasicPublish(
+				_sendOnlyChannel.BasicPublish(
 					exchange: "",
-					routingKey: "nativereceiver",
+					routingKey: "nativesendonlyreceiver",
 					basicProperties: null,
 					body: advancedMessage.ToRabbitMQMessage()
 				);
 			});
 		}
 
-		public async Task SendAndReplySimpleMessage(SimpleMessage simpleMessage)
+		public async Task SendAndReplyRectangularPrism(RectangularPrismRequest rectangularPrismRequest)
 		{
 			await Task.Run(() =>
 			{
-				_channel.BasicPublish(
+				_sendAndReplyChannel.BasicPublish(
 					exchange: "",
-					routingKey: "nativereplyreceiver",
-					basicProperties: _props,
-					body: simpleMessage.ToRabbitMQMessage()
-				);
-			});
-		}
-
-		public async Task SendAndReplyAdvancedMessage(AdvancedMessage advancedMessage)
-		{
-			await Task.Run(() =>
-			{
-				_channel.BasicPublish(
-					exchange: "",
-					routingKey: "nativereplyreceiver",
-					basicProperties: _props,
-					body: advancedMessage.ToRabbitMQMessage()
+					routingKey: "nativesendandreplyreceiver",
+					basicProperties: _sendAndReplyProps,
+					body: rectangularPrismRequest.ToRabbitMQMessage()
 				);
 			});
 		}
@@ -123,10 +107,22 @@ namespace Services.Services
 		{
 			await Task.Run(() =>
 			{
-				_channel.Dispose();
-				_replyChannel.Dispose();
+				_sendOnlyChannel.Dispose();
+				_sendAndReplyChannel.Dispose();
 				_connection.Dispose();
 			});
+		}
+
+		private void RectangularPrismResponseHandler(BasicDeliverEventArgs arguments)
+		{
+			var body = Encoding.UTF8.GetString(arguments.Body.ToArray());
+
+			var response = JsonSerializer.Deserialize<RectangularPrismResponse>(body);
+
+			if (response != null)
+				ConsoleUtils.WriteLineColor(response.ToString(), ConsoleColor.Green);
+			else
+				ConsoleUtils.WriteLineColor("No response found!", ConsoleColor.Red);
 		}
 	}
 }

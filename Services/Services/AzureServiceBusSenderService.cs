@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Services.Contracts;
 using Services.Models;
+using System.Text.Json;
 using Utils;
 
 namespace Services.Services
@@ -9,10 +10,12 @@ namespace Services.Services
 	public class AzureServiceBusSenderService : ISenderService
 	{
 		private readonly ServiceBusClient _serviceBusClient;
-		private readonly ServiceBusSender _serviceBusSender;
-		private readonly ServiceBusSender _serviceBusSessionSender;
-		private readonly ServiceBusSessionReceiver _serviceBusSessionReceiver;
-		private readonly Guid _sessionId;
+
+		private readonly ServiceBusSender _sendOnlyServiceBusSender;
+
+		private readonly ServiceBusSender _sendAndReplyServiceBusSender;
+		private readonly ServiceBusSessionReceiver _sendAndReplyServiceBusReceiver;
+		private readonly Guid _sendAndReplySessionId;
 
 		public AzureServiceBusSenderService(IConfiguration configuration)
 		{
@@ -21,50 +24,44 @@ namespace Services.Services
 				TransportType = ServiceBusTransportType.AmqpWebSockets
 			});
 
-			_sessionId = Guid.NewGuid();
+			_sendAndReplySessionId = Guid.NewGuid();
 
-			_serviceBusSender = _serviceBusClient.CreateSender(configuration.GetSection("ConnectionSettings")["ReceiverQueueName"]);
-			_serviceBusSessionSender = _serviceBusClient.CreateSender(configuration.GetSection("ConnectionSettings")["SessionReceiverQueueName"]);
-			_serviceBusSessionReceiver = _serviceBusClient.AcceptSessionAsync(configuration.GetSection("ConnectionSettings")["SessionSenderQueueName"], _sessionId.ToString()).Result;
+			_sendOnlyServiceBusSender = _serviceBusClient.CreateSender(configuration.GetSection("ConnectionSettings")["SendOnlyReceiverQueueName"]);
+			_sendAndReplyServiceBusSender = _serviceBusClient.CreateSender(configuration.GetSection("ConnectionSettings")["SendAndReplyReceiverQueueName"]);
+			_sendAndReplyServiceBusReceiver = _serviceBusClient.AcceptSessionAsync(configuration.GetSection("ConnectionSettings")["SendAndReplySenderQueueName"], _sendAndReplySessionId.ToString()).Result;
 		}
 
 		public async Task SendSimpleMessage(SimpleMessage simpleMessage)
 		{
-			await _serviceBusSender.SendMessageAsync(simpleMessage.ToServiceBusMessage());
+			await _sendOnlyServiceBusSender.SendMessageAsync(simpleMessage.ToServiceBusMessage());
 		}
 
 		public async Task SendAdvancedMessage(AdvancedMessage advancedMessage)
 		{
-			await _serviceBusSender.SendMessageAsync(advancedMessage.ToServiceBusMessage());
+			await _sendOnlyServiceBusSender.SendMessageAsync(advancedMessage.ToServiceBusMessage());
 		}
 
-		public async Task SendAndReplySimpleMessage(SimpleMessage simpleMessage)
+		public async Task SendAndReplyRectangularPrism(RectangularPrismRequest rectangularPrismRequest)
 		{
-			var serviceBusMessage = simpleMessage.ToServiceBusMessage();
-			serviceBusMessage.SessionId = _sessionId.ToString();
+			var serviceBusMessage = rectangularPrismRequest.ToServiceBusMessage();
+			serviceBusMessage.SessionId = _sendAndReplySessionId.ToString();
 
-			await _serviceBusSessionSender.SendMessageAsync(serviceBusMessage);
+			await _sendAndReplyServiceBusSender.SendMessageAsync(serviceBusMessage);
 
-			var replyMessage = await _serviceBusSessionReceiver.ReceiveMessageAsync();
-			ConsoleUtils.WriteLineColor($"Reply from simple message: {replyMessage.Body}", ConsoleColor.Green);
-		}
+			var responseMessage = await _sendAndReplyServiceBusReceiver.ReceiveMessageAsync();
+			var response = JsonSerializer.Deserialize<RectangularPrismResponse>(responseMessage.Body);
 
-		public async Task SendAndReplyAdvancedMessage(AdvancedMessage advancedMessage)
-		{
-			var serviceBusMessage = advancedMessage.ToServiceBusMessage();
-			serviceBusMessage.SessionId = _sessionId.ToString();
-
-			await _serviceBusSessionSender.SendMessageAsync(serviceBusMessage);
-
-			var replyMessage = await _serviceBusSessionReceiver.ReceiveMessageAsync();
-			ConsoleUtils.WriteLineColor($"Reply from advanced message: {replyMessage.Body}", ConsoleColor.Green);
+			if (response != null)
+				ConsoleUtils.WriteLineColor(response.ToString(), ConsoleColor.Green);
+			else
+				ConsoleUtils.WriteLineColor("No response found!", ConsoleColor.Red);
 		}
 
 		public async Task FinishJob()
 		{
-			await _serviceBusSender.DisposeAsync();
-			await _serviceBusSessionSender.DisposeAsync();
-			await _serviceBusSessionReceiver.DisposeAsync();
+			await _sendOnlyServiceBusSender.DisposeAsync();
+			await _sendAndReplyServiceBusSender.DisposeAsync();
+			await _sendAndReplyServiceBusReceiver.DisposeAsync();
 			await _serviceBusClient.DisposeAsync();
 		}
 	}

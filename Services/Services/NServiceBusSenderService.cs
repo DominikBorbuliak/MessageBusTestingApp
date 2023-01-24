@@ -47,11 +47,7 @@ namespace Services.Services
 			await _endpointInstance.Send(advancedMessage);
 		}
 
-		public async Task SendAndReplySimpleMessage(SimpleMessage simpleMessage)
-		{
-		}
-
-		public async Task SendAndReplyAdvancedMessage(AdvancedMessage advancedMessage)
+		public async Task SendAndReplyRectangularPrism(RectangularPrismRequest rectangularPrismRequest)
 		{
 		}
 

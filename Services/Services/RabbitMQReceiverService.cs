@@ -12,11 +12,12 @@ namespace Services.Services
 	public class RabbitMQReceiverService : IReceiverService
 	{
 		private readonly IConnection _connection;
-		private readonly IModel _channel;
-		private readonly EventingBasicConsumer _consumer;
 
-		private readonly IModel _replyChannel;
-		private readonly EventingBasicConsumer _replyConsumer;
+		private readonly IModel _sendOnlyChannel;
+		private readonly EventingBasicConsumer _sendOnlyConsumer;
+
+		private readonly IModel _sendAndReplyChannel;
+		private readonly EventingBasicConsumer _sendAndReplyConsumer;
 
 		public RabbitMQReceiverService(IConfiguration configuration)
 		{
@@ -26,50 +27,50 @@ namespace Services.Services
 			};
 
 			_connection = connectionFactory.CreateConnection();
-			_channel = _connection.CreateModel();
+			_sendOnlyChannel = _connection.CreateModel();
 
-			_channel.QueueDeclare(
-				queue: configuration.GetSection("ConnectionSettings")["QueueName"],
+			_sendOnlyChannel.QueueDeclare(
+				queue: configuration.GetSection("ConnectionSettings")["SendOnlyReceiverQueueName"],
 				durable: false,
 				exclusive: false,
 				autoDelete: false,
 				arguments: null
 			);
 
-			_consumer = new EventingBasicConsumer(_channel);
+			_sendOnlyConsumer = new EventingBasicConsumer(_sendOnlyChannel);
 
-			_replyChannel = _connection.CreateModel();
+			_sendAndReplyChannel = _connection.CreateModel();
 
-			_replyChannel.QueueDeclare(
-				queue: configuration.GetSection("ConnectionSettings")["ReplyReceiverQueueName"],
+			_sendAndReplyChannel.QueueDeclare(
+				queue: configuration.GetSection("ConnectionSettings")["SendAndReplyReceiverQueueName"],
 				durable: false,
 				exclusive: false,
 				autoDelete: false,
 				arguments: null
 			);
 
-			_replyChannel.BasicQos(0, 1, false);
-			_replyConsumer = new EventingBasicConsumer(_replyChannel);
+			_sendAndReplyChannel.BasicQos(0, 1, false);
+			_sendAndReplyConsumer = new EventingBasicConsumer(_sendAndReplyChannel);
 		}
 
 		public async Task StartJob()
 		{
 			await Task.Run(() =>
 			{
-				_consumer.Received += (_, eventArguments) => MessageHandler(eventArguments);
+				_sendOnlyConsumer.Received += (_, eventArguments) => MessageHandler(eventArguments);
 
-				_channel.BasicConsume(
-					queue: "nativereceiver",
+				_sendOnlyChannel.BasicConsume(
+					queue: "nativesendonlyreceiver",
 					autoAck: true,
-					consumer: _consumer
+					consumer: _sendOnlyConsumer
 				);
 
-				_replyConsumer.Received += (_, eventArguments) => ReplyMessageHandler(eventArguments);
+				_sendAndReplyConsumer.Received += (_, eventArguments) => RectangularPrismRequestHandler(eventArguments);
 
-				_replyChannel.BasicConsume(
-					queue: "nativereplyreceiver",
+				_sendAndReplyChannel.BasicConsume(
+					queue: "nativesendandreplyreceiver",
 					autoAck: false,
-					consumer: _replyConsumer
+					consumer: _sendAndReplyConsumer
 				);
 			});
 		}
@@ -80,8 +81,8 @@ namespace Services.Services
 			{
 				_connection.Close();
 
-				_channel.Dispose();
-				_replyChannel.Dispose();
+				_sendOnlyChannel.Dispose();
+				_sendAndReplyChannel.Dispose();
 
 				_connection.Dispose();
 			});
@@ -102,31 +103,30 @@ namespace Services.Services
 			}
 		}
 
-		private void ReplyMessageHandler(BasicDeliverEventArgs arguments)
+		private void RectangularPrismRequestHandler(BasicDeliverEventArgs arguments)
 		{
 			var body = Encoding.UTF8.GetString(arguments.Body.ToArray());
 
-			try
-			{
-				var advancedMessage = JsonSerializer.Deserialize<AdvancedMessage>(body);
-				ConsoleUtils.WriteLineColor($"Advanced messsage received:\n{advancedMessage}", ConsoleColor.Green);
-			}
-			catch
-			{
-				ConsoleUtils.WriteLineColor($"Simple messsage received: {body}", ConsoleColor.Green);
-			}
+			var rectangularPrismRequest = JsonSerializer.Deserialize<RectangularPrismRequest>(body);
+			ConsoleUtils.WriteLineColor($"Rectangular prism request received:\n{rectangularPrismRequest}", ConsoleColor.Green);
 
-			ConsoleUtils.WriteLineColor("Sending response", ConsoleColor.Green);
+			var rectangularPrismResponse = new RectangularPrismResponse
+			{
+				SurfaceArea = 2 * (rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeB + rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeC + rectangularPrismRequest.EdgeB * rectangularPrismRequest.EdgeC),
+				Volume = rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeB * rectangularPrismRequest.EdgeC
+			};
 
-			_replyChannel.BasicPublish(
+			ConsoleUtils.WriteLineColor("Sending rectangular prism response", ConsoleColor.Green);
+
+			_sendAndReplyChannel.BasicPublish(
 					exchange: "",
 					routingKey: arguments.BasicProperties.ReplyTo,
 					mandatory: false,
-					basicProperties: _replyChannel.CreateBasicProperties(),
-					body: Encoding.UTF8.GetBytes("Message was successfuly received")
+					basicProperties: _sendAndReplyChannel.CreateBasicProperties(),
+					body: rectangularPrismResponse.ToRabbitMQMessage()
 				);
 
-			_replyChannel.BasicAck(
+			_sendAndReplyChannel.BasicAck(
 				deliveryTag: arguments.DeliveryTag,
 				multiple: false
 			);

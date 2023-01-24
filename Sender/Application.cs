@@ -44,17 +44,8 @@ namespace Sender
 						case ActionType.SendOnlyNRandomAdvancedMessages:
 							await HandleSendOnlyNRandomAdvancedMessages();
 							break;
-						case ActionType.SendAndReplyOneCustomSimpleMessage:
-							await HandleSendAndReplyOneCustomSimpleMessage();
-							break;
-						case ActionType.SendAndReplyOneCustomAdvancedMessage:
-							await HandleSendAndReplyOneCustomAdvancedMessage();
-							break;
-						case ActionType.SendAndReplyNRandomSimpleMessages:
-							await HandleSendAndReplyNRandomSimpleMessages();
-							break;
-						case ActionType.SendAndReplyNRandomAdvancedMessages:
-							await HandleSendAndReplyNRandomAdvancedMessages();
+						case ActionType.SendAndReplyRectangularPrism:
+							await HandleSendAndReplyRectangularPrism();
 							break;
 					}
 
@@ -97,13 +88,13 @@ namespace Sender
 			{
 				Name = ConsoleUtils.GetUserTextInput("Please insert the name:"),
 				Surname = ConsoleUtils.GetUserTextInput("Please insert the surname:"),
-				Age = ConsoleUtils.GetUserNumberInput("Please enter the age:"),
+				Age = ConsoleUtils.GetUserIntegerInput("Please enter the age:"),
 				Email = ConsoleUtils.GetUserTextInput("Please enter the email:"),
 				Description = ConsoleUtils.GetUserTextInput("Please enter the description:"),
 				Address = new AdvancedMessageAddress
 				{
 					StreetName = ConsoleUtils.GetUserTextInput("Please enter the street name:"),
-					BuildingNumber = ConsoleUtils.GetUserNumberInput("Please enter the street number:"),
+					BuildingNumber = ConsoleUtils.GetUserIntegerInput("Please enter the street number:"),
 					City = ConsoleUtils.GetUserTextInput("Please enter the city:"),
 					PostalCode = ConsoleUtils.GetUserTextInput("Please enter the postal code:"),
 					Country = ConsoleUtils.GetUserTextInput("Please enter the country:")
@@ -119,7 +110,7 @@ namespace Sender
 		/// <returns></returns>
 		private async Task HandleSendOnlyNRandomSimpleMessages()
 		{
-			var n = ConsoleUtils.GetUserNumberInput("Please enter the number of messages you want to send:");
+			var n = ConsoleUtils.GetUserIntegerInput("Please enter the number of messages you want to send:");
 
 			RandomMessageGenerator messageGenerator = new RandomMessageGenerator();
 			var randomMessages = messageGenerator.GetRandomSimpleMessages(n);
@@ -134,7 +125,7 @@ namespace Sender
 		/// <returns></returns>
 		private async Task HandleSendOnlyNRandomAdvancedMessages()
 		{
-			var n = ConsoleUtils.GetUserNumberInput("Please enter the number of messages you want to send:");
+			var n = ConsoleUtils.GetUserIntegerInput("Please enter the number of messages you want to send:");
 
 			RandomMessageGenerator messageGenerator = new RandomMessageGenerator();
 			var randomMessages = await messageGenerator.GetRandomAdvancedMessages(n);
@@ -143,58 +134,16 @@ namespace Sender
 				await _senderService.SendAdvancedMessage(randomMessage);
 		}
 
-		private async Task HandleSendAndReplyOneCustomSimpleMessage()
+		private async Task HandleSendAndReplyRectangularPrism()
 		{
-			var simpleMessage = new SimpleMessage
+			var rectangularPrismRequest = new RectangularPrismRequest
 			{
-				Text = ConsoleUtils.GetUserTextInput("Please insert text of message:")
+				EdgeA = ConsoleUtils.GetUserDoubleInput("Please insert the length of edge A:"),
+				EdgeB = ConsoleUtils.GetUserDoubleInput("Please insert the length of edge B:"),
+				EdgeC = ConsoleUtils.GetUserDoubleInput("Please insert the length of edge C:")
 			};
 
-			await _senderService.SendAndReplySimpleMessage(simpleMessage);
-		}
-
-		private async Task HandleSendAndReplyOneCustomAdvancedMessage()
-		{
-			var advancedMessage = new AdvancedMessage
-			{
-				Name = ConsoleUtils.GetUserTextInput("Please insert the name:"),
-				Surname = ConsoleUtils.GetUserTextInput("Please insert the surname:"),
-				Age = ConsoleUtils.GetUserNumberInput("Please enter the age:"),
-				Email = ConsoleUtils.GetUserTextInput("Please enter the email:"),
-				Description = ConsoleUtils.GetUserTextInput("Please enter the description:"),
-				Address = new AdvancedMessageAddress
-				{
-					StreetName = ConsoleUtils.GetUserTextInput("Please enter the street name:"),
-					BuildingNumber = ConsoleUtils.GetUserNumberInput("Please enter the street number:"),
-					City = ConsoleUtils.GetUserTextInput("Please enter the city:"),
-					PostalCode = ConsoleUtils.GetUserTextInput("Please enter the postal code:"),
-					Country = ConsoleUtils.GetUserTextInput("Please enter the country:")
-				}
-			};
-
-			await _senderService.SendAndReplyAdvancedMessage(advancedMessage);
-		}
-
-		private async Task HandleSendAndReplyNRandomSimpleMessages()
-		{
-			var n = ConsoleUtils.GetUserNumberInput("Please enter the number of messages you want to send:");
-
-			RandomMessageGenerator messageGenerator = new RandomMessageGenerator();
-			var randomMessages = messageGenerator.GetRandomSimpleMessages(n);
-
-			foreach (var randomMessage in randomMessages)
-				await _senderService.SendAndReplySimpleMessage(randomMessage);
-		}
-
-		private async Task HandleSendAndReplyNRandomAdvancedMessages()
-		{
-			var n = ConsoleUtils.GetUserNumberInput("Please enter the number of messages you want to send:");
-
-			RandomMessageGenerator messageGenerator = new RandomMessageGenerator();
-			var randomMessages = await messageGenerator.GetRandomAdvancedMessages(n);
-
-			foreach (var randomMessage in randomMessages)
-				await _senderService.SendAndReplyAdvancedMessage(randomMessage);
+			await _senderService.SendAndReplyRectangularPrism(rectangularPrismRequest);
 		}
 	}
 }

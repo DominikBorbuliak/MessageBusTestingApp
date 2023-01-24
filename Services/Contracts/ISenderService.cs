@@ -18,9 +18,7 @@ namespace Services.Contracts
 		/// <returns></returns>
 		Task SendAdvancedMessage(AdvancedMessage advancedMessage);
 
-		Task SendAndReplySimpleMessage(SimpleMessage simpleMessage);
-
-		Task SendAndReplyAdvancedMessage(AdvancedMessage advancedMessage);
+		Task SendAndReplyRectangularPrism(RectangularPrismRequest rectangularPrismRequest);
 
 		/// <summary>
 		/// Closes everything that was opened due sending of messages and clears memory
