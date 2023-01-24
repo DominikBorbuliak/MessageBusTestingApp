@@ -15,6 +15,9 @@ namespace Services.Services
 		private readonly IModel _channel;
 		private readonly EventingBasicConsumer _consumer;
 
+		private readonly IModel _replyChannel;
+		private readonly EventingBasicConsumer _replyConsumer;
+
 		public RabbitMQReceiverService(IConfiguration configuration)
 		{
 			var connectionFactory = new ConnectionFactory
@@ -34,6 +37,19 @@ namespace Services.Services
 			);
 
 			_consumer = new EventingBasicConsumer(_channel);
+
+			_replyChannel = _connection.CreateModel();
+
+			_replyChannel.QueueDeclare(
+				queue: configuration.GetSection("ConnectionSettings")["ReplyReceiverQueueName"],
+				durable: false,
+				exclusive: false,
+				autoDelete: false,
+				arguments: null
+			);
+
+			_replyChannel.BasicQos(0, 1, false);
+			_replyConsumer = new EventingBasicConsumer(_replyChannel);
 		}
 
 		public async Task StartJob()
@@ -47,6 +63,14 @@ namespace Services.Services
 					autoAck: true,
 					consumer: _consumer
 				);
+
+				_replyConsumer.Received += (_, eventArguments) => ReplyMessageHandler(eventArguments);
+
+				_replyChannel.BasicConsume(
+					queue: "nativereplyreceiver",
+					autoAck: false,
+					consumer: _replyConsumer
+				);
 			});
 		}
 
@@ -57,6 +81,8 @@ namespace Services.Services
 				_connection.Close();
 
 				_channel.Dispose();
+				_replyChannel.Dispose();
+
 				_connection.Dispose();
 			});
 		}
@@ -74,6 +100,36 @@ namespace Services.Services
 			{
 				ConsoleUtils.WriteLineColor($"Simple messsage received: {body}", ConsoleColor.Green);
 			}
+		}
+
+		private void ReplyMessageHandler(BasicDeliverEventArgs arguments)
+		{
+			var body = Encoding.UTF8.GetString(arguments.Body.ToArray());
+
+			try
+			{
+				var advancedMessage = JsonSerializer.Deserialize<AdvancedMessage>(body);
+				ConsoleUtils.WriteLineColor($"Advanced messsage received:\n{advancedMessage}", ConsoleColor.Green);
+			}
+			catch
+			{
+				ConsoleUtils.WriteLineColor($"Simple messsage received: {body}", ConsoleColor.Green);
+			}
+
+			ConsoleUtils.WriteLineColor("Sending response", ConsoleColor.Green);
+
+			_replyChannel.BasicPublish(
+					exchange: "",
+					routingKey: arguments.BasicProperties.ReplyTo,
+					mandatory: false,
+					basicProperties: _replyChannel.CreateBasicProperties(),
+					body: Encoding.UTF8.GetBytes("Message was successfuly received")
+				);
+
+			_replyChannel.BasicAck(
+				deliveryTag: arguments.DeliveryTag,
+				multiple: false
+			);
 		}
 	}
 }
