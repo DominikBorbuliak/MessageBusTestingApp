@@ -1,55 +1,85 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Services.Contracts;
 using Services.Models;
+using Utils;
 
 namespace Services.Services
 {
 	public class NServiceBusSenderService : ISenderService
 	{
-		private readonly IEndpointInstance _endpointInstance;
+		private readonly IEndpointInstance _sendOnlyEndpointInstance;
+		private readonly IEndpointInstance _sendAndReplyEndpointInstance;
 
 		public NServiceBusSenderService(IConfiguration configuration, bool isAzureServiceBus)
 		{
-			var endpointConfiguration = new EndpointConfiguration(configuration.GetSection("ConnectionSettings")["SenderEndpointName"]);
+			var sendOnlyEndpointConfiguration = new EndpointConfiguration(configuration.GetSection("ConnectionSettings")["SendOnlySenderEndpointName"]);
+			var sendAndReplyEndpointConfiguration = new EndpointConfiguration(configuration.GetSection("ConnectionSettings")["SendAndReplySenderEndpointName"]);
 
 			if (isAzureServiceBus)
 			{
-				var transport = endpointConfiguration.UseTransport<AzureServiceBusTransport>();
+				var sendOnlyTransport = sendOnlyEndpointConfiguration.UseTransport<AzureServiceBusTransport>();
+				sendOnlyTransport.ConnectionString(configuration.GetConnectionString("AzureServiceBus"));
+				sendOnlyTransport.Routing().RouteToEndpoint(typeof(SimpleMessage), configuration.GetSection("ConnectionSettings")["SendOnlyReceiverEndpointName"]);
+				sendOnlyTransport.Routing().RouteToEndpoint(typeof(AdvancedMessage), configuration.GetSection("ConnectionSettings")["SendOnlyReceiverEndpointName"]);
+				sendOnlyTransport.TopicName(configuration.GetSection("ConnectionSettings")["TopicName"]);
+				sendOnlyEndpointConfiguration.SendOnly();
 
-				transport.ConnectionString(configuration.GetConnectionString("AzureServiceBus"));
-				transport.Routing().RouteToEndpoint(typeof(SimpleMessage), configuration.GetSection("ConnectionSettings")["ReceiverEndpointName"]);
-				transport.Routing().RouteToEndpoint(typeof(AdvancedMessage), configuration.GetSection("ConnectionSettings")["ReceiverEndpointName"]);
-				transport.TopicName(configuration.GetSection("ConnectionSettings")["TopicName"]);
-
-				endpointConfiguration.SendOnly();
+				var sendAndReplyTransport = sendAndReplyEndpointConfiguration.UseTransport<AzureServiceBusTransport>();
+				sendAndReplyTransport.ConnectionString(configuration.GetConnectionString("AzureServiceBus"));
+				sendAndReplyTransport.Routing().RouteToEndpoint(typeof(RectangularPrismRequest), configuration.GetSection("ConnectionSettings")["SendAndReplyReceiverEndpointName"]);
+				sendAndReplyTransport.TopicName(configuration.GetSection("ConnectionSettings")["TopicName"]);
 			}
 			else
 			{
-				var transport = endpointConfiguration.UseTransport<RabbitMQTransport>();
+				var sendOnlyTransport = sendOnlyEndpointConfiguration.UseTransport<RabbitMQTransport>();
+				sendOnlyTransport.UseConventionalRoutingTopology(QueueType.Quorum);
+				sendOnlyTransport.ConnectionString($"host={configuration.GetSection("ConnectionSettings")["HostName"]}");
+				sendOnlyTransport.Routing().RouteToEndpoint(typeof(SimpleMessage), configuration.GetSection("ConnectionSettings")["SendOnlyReceiverEndpointName"]);
+				sendOnlyTransport.Routing().RouteToEndpoint(typeof(AdvancedMessage), configuration.GetSection("ConnectionSettings")["SendOnlyReceiverEndpointName"]);
 
-				transport.UseConventionalRoutingTopology(QueueType.Quorum);
-				transport.ConnectionString($"host={configuration.GetSection("ConnectionSettings")["HostName"]}");
-				transport.Routing().RouteToEndpoint(typeof(SimpleMessage), configuration.GetSection("ConnectionSettings")["ReceiverEndpointName"]);
-				transport.Routing().RouteToEndpoint(typeof(AdvancedMessage), configuration.GetSection("ConnectionSettings")["ReceiverEndpointName"]);
+				var sendAndReplyTransport = sendAndReplyEndpointConfiguration.UseTransport<RabbitMQTransport>();
+				sendAndReplyTransport.UseConventionalRoutingTopology(QueueType.Quorum);
+				sendAndReplyTransport.ConnectionString($"host={configuration.GetSection("ConnectionSettings")["HostName"]}");
+				sendAndReplyTransport.Routing().RouteToEndpoint(typeof(RectangularPrismRequest), configuration.GetSection("ConnectionSettings")["SendAndReplyReceiverEndpointName"]);
 			}
 
-			endpointConfiguration.EnableInstallers();
-			_endpointInstance = Endpoint.Start(endpointConfiguration).Result;
+			sendOnlyEndpointConfiguration.EnableInstallers();
+			sendAndReplyEndpointConfiguration.EnableInstallers();
+
+			_sendOnlyEndpointInstance = Endpoint.Start(sendOnlyEndpointConfiguration).Result;
+			_sendAndReplyEndpointInstance = Endpoint.Start(sendAndReplyEndpointConfiguration).Result;
 		}
 
 		public async Task SendSimpleMessage(SimpleMessage simpleMessage)
 		{
-			await _endpointInstance.Send(simpleMessage);
+			await _sendOnlyEndpointInstance.Send(simpleMessage);
 		}
 
 		public async Task SendAdvancedMessage(AdvancedMessage advancedMessage)
 		{
-			await _endpointInstance.Send(advancedMessage);
+			await _sendOnlyEndpointInstance.Send(advancedMessage);
+		}
+
+		public async Task SendAndReplyRectangularPrism(RectangularPrismRequest rectangularPrismRequest)
+		{
+			await _sendAndReplyEndpointInstance.Send(rectangularPrismRequest);
 		}
 
 		public async Task FinishJob()
 		{
-			await _endpointInstance.Stop();
+			await _sendOnlyEndpointInstance.Stop();
+			await _sendAndReplyEndpointInstance.Stop();
+		}
+	}
+
+	public class NServiceBusRectangularPrismResponseHandler : IHandleMessages<RectangularPrismResponse>
+	{
+		public async Task Handle(RectangularPrismResponse message, IMessageHandlerContext context)
+		{
+			await Task.Run(() =>
+			{
+				ConsoleUtils.WriteLineColor(message.ToString(), ConsoleColor.Green);
+			}, context.CancellationToken);
 		}
 	}
 }

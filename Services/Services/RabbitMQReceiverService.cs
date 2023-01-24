@@ -12,8 +12,12 @@ namespace Services.Services
 	public class RabbitMQReceiverService : IReceiverService
 	{
 		private readonly IConnection _connection;
-		private readonly IModel _channel;
-		private readonly EventingBasicConsumer _consumer;
+
+		private readonly IModel _sendOnlyChannel;
+		private readonly EventingBasicConsumer _sendOnlyConsumer;
+
+		private readonly IModel _sendAndReplyChannel;
+		private readonly EventingBasicConsumer _sendAndReplyConsumer;
 
 		public RabbitMQReceiverService(IConfiguration configuration)
 		{
@@ -23,29 +27,50 @@ namespace Services.Services
 			};
 
 			_connection = connectionFactory.CreateConnection();
-			_channel = _connection.CreateModel();
+			_sendOnlyChannel = _connection.CreateModel();
 
-			_channel.QueueDeclare(
-				queue: configuration.GetSection("ConnectionSettings")["QueueName"],
+			_sendOnlyChannel.QueueDeclare(
+				queue: configuration.GetSection("ConnectionSettings")["SendOnlyReceiverQueueName"],
 				durable: false,
 				exclusive: false,
 				autoDelete: false,
 				arguments: null
 			);
 
-			_consumer = new EventingBasicConsumer(_channel);
+			_sendOnlyConsumer = new EventingBasicConsumer(_sendOnlyChannel);
+
+			_sendAndReplyChannel = _connection.CreateModel();
+
+			_sendAndReplyChannel.QueueDeclare(
+				queue: configuration.GetSection("ConnectionSettings")["SendAndReplyReceiverQueueName"],
+				durable: false,
+				exclusive: false,
+				autoDelete: false,
+				arguments: null
+			);
+
+			_sendAndReplyChannel.BasicQos(0, 1, false);
+			_sendAndReplyConsumer = new EventingBasicConsumer(_sendAndReplyChannel);
 		}
 
 		public async Task StartJob()
 		{
 			await Task.Run(() =>
 			{
-				_consumer.Received += (_, eventArguments) => MessageHandler(eventArguments);
+				_sendOnlyConsumer.Received += (_, eventArguments) => MessageHandler(eventArguments);
 
-				_channel.BasicConsume(
-					queue: "nativereceiver",
+				_sendOnlyChannel.BasicConsume(
+					queue: "nativesendonlyreceiver",
 					autoAck: true,
-					consumer: _consumer
+					consumer: _sendOnlyConsumer
+				);
+
+				_sendAndReplyConsumer.Received += (_, eventArguments) => RectangularPrismRequestHandler(eventArguments);
+
+				_sendAndReplyChannel.BasicConsume(
+					queue: "nativesendandreplyreceiver",
+					autoAck: false,
+					consumer: _sendAndReplyConsumer
 				);
 			});
 		}
@@ -56,7 +81,9 @@ namespace Services.Services
 			{
 				_connection.Close();
 
-				_channel.Dispose();
+				_sendOnlyChannel.Dispose();
+				_sendAndReplyChannel.Dispose();
+
 				_connection.Dispose();
 			});
 		}
@@ -74,6 +101,35 @@ namespace Services.Services
 			{
 				ConsoleUtils.WriteLineColor($"Simple messsage received: {body}", ConsoleColor.Green);
 			}
+		}
+
+		private void RectangularPrismRequestHandler(BasicDeliverEventArgs arguments)
+		{
+			var body = Encoding.UTF8.GetString(arguments.Body.ToArray());
+
+			var rectangularPrismRequest = JsonSerializer.Deserialize<RectangularPrismRequest>(body);
+			ConsoleUtils.WriteLineColor($"Rectangular prism request received:\n{rectangularPrismRequest}", ConsoleColor.Green);
+
+			var rectangularPrismResponse = new RectangularPrismResponse
+			{
+				SurfaceArea = 2 * (rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeB + rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeC + rectangularPrismRequest.EdgeB * rectangularPrismRequest.EdgeC),
+				Volume = rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeB * rectangularPrismRequest.EdgeC
+			};
+
+			ConsoleUtils.WriteLineColor("Sending rectangular prism response", ConsoleColor.Green);
+
+			_sendAndReplyChannel.BasicPublish(
+					exchange: "",
+					routingKey: arguments.BasicProperties.ReplyTo,
+					mandatory: false,
+					basicProperties: _sendAndReplyChannel.CreateBasicProperties(),
+					body: rectangularPrismResponse.ToRabbitMQMessage()
+				);
+
+			_sendAndReplyChannel.BasicAck(
+				deliveryTag: arguments.DeliveryTag,
+				multiple: false
+			);
 		}
 	}
 }

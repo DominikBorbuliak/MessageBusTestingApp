@@ -5,7 +5,7 @@ using Utils;
 
 namespace Sender
 {
-    public class Application
+	public class Application
 	{
 		private readonly ISenderService _senderService;
 
@@ -44,10 +44,13 @@ namespace Sender
 						case ActionType.SendOnlyNRandomAdvancedMessages:
 							await HandleSendOnlyNRandomAdvancedMessages();
 							break;
+						case ActionType.SendAndReplyRectangularPrism:
+							await HandleSendAndReplyRectangularPrism();
+							break;
 					}
 
 					ConsoleUtils.WriteLineColor("Message was successfully send to queue!", ConsoleColor.Green);
-					Thread.Sleep(1000);
+					Thread.Sleep(5000);
 				}
 			}
 			catch
@@ -85,13 +88,13 @@ namespace Sender
 			{
 				Name = ConsoleUtils.GetUserTextInput("Please insert the name:"),
 				Surname = ConsoleUtils.GetUserTextInput("Please insert the surname:"),
-				Age = ConsoleUtils.GetUserNumberInput("Please enter the age:"),
+				Age = ConsoleUtils.GetUserIntegerInput("Please enter the age:"),
 				Email = ConsoleUtils.GetUserTextInput("Please enter the email:"),
 				Description = ConsoleUtils.GetUserTextInput("Please enter the description:"),
 				Address = new AdvancedMessageAddress
 				{
 					StreetName = ConsoleUtils.GetUserTextInput("Please enter the street name:"),
-					BuildingNumber = ConsoleUtils.GetUserNumberInput("Please enter the street number:"),
+					BuildingNumber = ConsoleUtils.GetUserIntegerInput("Please enter the street number:"),
 					City = ConsoleUtils.GetUserTextInput("Please enter the city:"),
 					PostalCode = ConsoleUtils.GetUserTextInput("Please enter the postal code:"),
 					Country = ConsoleUtils.GetUserTextInput("Please enter the country:")
@@ -107,7 +110,7 @@ namespace Sender
 		/// <returns></returns>
 		private async Task HandleSendOnlyNRandomSimpleMessages()
 		{
-			var n = ConsoleUtils.GetUserNumberInput("Please enter the number of messages you want to send:");
+			var n = ConsoleUtils.GetUserIntegerInput("Please enter the number of messages you want to send:");
 
 			RandomMessageGenerator messageGenerator = new RandomMessageGenerator();
 			var randomMessages = messageGenerator.GetRandomSimpleMessages(n);
@@ -122,13 +125,25 @@ namespace Sender
 		/// <returns></returns>
 		private async Task HandleSendOnlyNRandomAdvancedMessages()
 		{
-			var n = ConsoleUtils.GetUserNumberInput("Please enter the number of messages you want to send:");
+			var n = ConsoleUtils.GetUserIntegerInput("Please enter the number of messages you want to send:");
 
 			RandomMessageGenerator messageGenerator = new RandomMessageGenerator();
 			var randomMessages = await messageGenerator.GetRandomAdvancedMessages(n);
 
 			foreach (var randomMessage in randomMessages)
 				await _senderService.SendAdvancedMessage(randomMessage);
+		}
+
+		private async Task HandleSendAndReplyRectangularPrism()
+		{
+			var rectangularPrismRequest = new RectangularPrismRequest
+			{
+				EdgeA = ConsoleUtils.GetUserDoubleInput("Please insert the length of edge A:"),
+				EdgeB = ConsoleUtils.GetUserDoubleInput("Please insert the length of edge B:"),
+				EdgeC = ConsoleUtils.GetUserDoubleInput("Please insert the length of edge C:")
+			};
+
+			await _senderService.SendAndReplyRectangularPrism(rectangularPrismRequest);
 		}
 	}
 }
