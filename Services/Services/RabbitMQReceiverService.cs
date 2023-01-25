@@ -65,7 +65,7 @@ namespace Services.Services
 					consumer: _sendOnlyConsumer
 				);
 
-				_sendAndReplyConsumer.Received += (_, eventArguments) => RectangularPrismRequestHandler(eventArguments);
+				_sendAndReplyConsumer.Received += (_, eventArguments) => RequestHandler(eventArguments);
 
 				_sendAndReplyChannel.BasicConsume(
 					queue: "nativesendandreplyreceiver",
@@ -103,28 +103,58 @@ namespace Services.Services
 			}
 		}
 
-		private void RectangularPrismRequestHandler(BasicDeliverEventArgs arguments)
+		private void RequestHandler(BasicDeliverEventArgs arguments)
 		{
 			var body = Encoding.UTF8.GetString(arguments.Body.ToArray());
 
-			var rectangularPrismRequest = JsonSerializer.Deserialize<RectangularPrismRequest>(body);
-			ConsoleUtils.WriteLineColor($"Rectangular prism request received:\n{rectangularPrismRequest}", ConsoleColor.Green);
-
-			var rectangularPrismResponse = new RectangularPrismResponse
+			if (arguments.BasicProperties.Type.Equals(MessageType.RectangularPrismRequest.GetDescription()))
 			{
-				SurfaceArea = 2 * (rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeB + rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeC + rectangularPrismRequest.EdgeB * rectangularPrismRequest.EdgeC),
-				Volume = rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeB * rectangularPrismRequest.EdgeC
-			};
+				var rectangularPrismRequest = JsonSerializer.Deserialize<RectangularPrismRequest>(body);
+				ConsoleUtils.WriteLineColor($"Rectangular prism request received:\n{rectangularPrismRequest}", ConsoleColor.Green);
 
-			ConsoleUtils.WriteLineColor("Sending rectangular prism response", ConsoleColor.Green);
+				var rectangularPrismResponse = new RectangularPrismResponse
+				{
+					SurfaceArea = 2 * (rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeB + rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeC + rectangularPrismRequest.EdgeB * rectangularPrismRequest.EdgeC),
+					Volume = rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeB * rectangularPrismRequest.EdgeC
+				};
 
-			_sendAndReplyChannel.BasicPublish(
+				ConsoleUtils.WriteLineColor("Sending rectangular prism response", ConsoleColor.Green);
+
+				var props = _sendAndReplyChannel.CreateBasicProperties();
+				props.Type = MessageType.RectangularPrismResponse.GetDescription();
+
+				_sendAndReplyChannel.BasicPublish(
 					exchange: "",
 					routingKey: arguments.BasicProperties.ReplyTo,
 					mandatory: false,
-					basicProperties: _sendAndReplyChannel.CreateBasicProperties(),
+					basicProperties: props,
 					body: rectangularPrismResponse.ToRabbitMQMessage()
 				);
+			}
+			else if (arguments.BasicProperties.Type.Equals(MessageType.ProcessTimeoutRequest.GetDescription()))
+			{
+				var processTimeoutRequest = JsonSerializer.Deserialize<ProcessTimeoutRequest>(body);
+
+				ConsoleUtils.WriteLineColor($"Received process timeout request: {processTimeoutRequest.ProcessName}. Waiting for: {processTimeoutRequest.MillisecondsTimeout}ms", ConsoleColor.Green);
+				Task.Delay(processTimeoutRequest.MillisecondsTimeout).Wait();
+				ConsoleUtils.WriteLineColor($"Sending process timeout response: {processTimeoutRequest.ProcessName}", ConsoleColor.Green);
+
+				var processTimeoutResponse = new ProcessTimeoutResponse
+				{
+					ProcessName = processTimeoutRequest.ProcessName
+				};
+
+				var props = _sendAndReplyChannel.CreateBasicProperties();
+				props.Type = MessageType.ProcessTimeoutResponse.GetDescription();
+
+				_sendAndReplyChannel.BasicPublish(
+					exchange: "",
+					routingKey: arguments.BasicProperties.ReplyTo,
+					mandatory: false,
+					basicProperties: props,
+					body: processTimeoutResponse.ToRabbitMQMessage()
+				);
+			}
 
 			_sendAndReplyChannel.BasicAck(
 				deliveryTag: arguments.DeliveryTag,

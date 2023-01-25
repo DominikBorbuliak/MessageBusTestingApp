@@ -1,6 +1,7 @@
 ﻿using Azure.Messaging.ServiceBus;
 using System.Text.Json;
 using System.Text;
+using Utils;
 
 namespace Services.Models
 {
@@ -24,7 +25,11 @@ namespace Services.Models
 
 	public static class RectangularPrismRequestMapper
 	{
-		public static ServiceBusMessage ToServiceBusMessage(this RectangularPrismRequest rectangularPrismRequest) => new ServiceBusMessage(JsonSerializer.Serialize(rectangularPrismRequest));
+		public static ServiceBusMessage ToServiceBusMessage(this RectangularPrismRequest rectangularPrismRequest) => new ServiceBusMessage(JsonSerializer.Serialize(rectangularPrismRequest))
+		{
+			Subject = MessageType.RectangularPrismRequest.GetDescription()
+		};
+
 		public static byte[] ToRabbitMQMessage(this RectangularPrismRequest rectangularPrismRequest) => Encoding.UTF8.GetBytes(JsonSerializer.Serialize(rectangularPrismRequest));
 	}
 }

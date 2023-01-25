@@ -8,6 +8,18 @@ namespace Services.Models
 		SimpleMessage,
 
 		[Description("AdvancedMessage")]
-		AdvancedMessage
+		AdvancedMessage,
+
+		[Description("RectangularPrismRequest")]
+		RectangularPrismRequest,
+
+		[Description("RectangularPrismResponse")]
+		RectangularPrismResponse,
+
+		[Description("ProcessTimeoutRequest")]
+		ProcessTimeoutRequest,
+
+		[Description("ProcessTimeoutResponse")]
+		ProcessTimeoutResponse
 	}
 }

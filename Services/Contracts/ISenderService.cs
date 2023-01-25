@@ -20,6 +20,8 @@ namespace Services.Contracts
 
 		Task SendAndReplyRectangularPrism(RectangularPrismRequest rectangularPrismRequest);
 
+		Task SendAndReplyProcessTimeout(ProcessTimeoutRequest processTimeoutRequest);
+
 		/// <summary>
 		/// Closes everything that was opened due sending of messages and clears memory
 		/// </summary>
