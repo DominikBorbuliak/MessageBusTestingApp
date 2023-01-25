@@ -1,5 +1,6 @@
 ﻿using Azure.Messaging.ServiceBus;
 using System.Text;
+using Utils;
 
 namespace Services.Models
 {
@@ -13,7 +14,11 @@ namespace Services.Models
 
 	public static class SimpleMessageMapper
 	{
-		public static ServiceBusMessage ToServiceBusMessage(this SimpleMessage simpleMessage) => new ServiceBusMessage(simpleMessage.Text);
+		public static ServiceBusMessage ToServiceBusMessage(this SimpleMessage simpleMessage) => new ServiceBusMessage(simpleMessage.Text)
+		{
+			Subject = MessageType.SimpleMessage.GetDescription()
+		};
+
 		public static byte[] ToRabbitMQMessage(this SimpleMessage simpleMessage) => Encoding.UTF8.GetBytes(simpleMessage.Text);
 	}
 }

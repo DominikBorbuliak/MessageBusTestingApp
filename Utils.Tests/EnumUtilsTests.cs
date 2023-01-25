@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using @Description = System.ComponentModel.DescriptionAttribute;
 
 namespace Utils.Tests
 {
@@ -34,6 +35,20 @@ namespace Utils.Tests
 		}
 
 		[TestMethod()]
+		public void GetDescriptionTest()
+		{
+			// Basic test cases
+			Assert.AreEqual(string.Empty, TestEnumA.TypeA1.GetDescription());
+			Assert.AreEqual(string.Empty, TestEnumA.TypeA2.GetDescription());
+			Assert.AreEqual("TypeA3Description", TestEnumA.TypeA3.GetDescription());
+			Assert.AreEqual("TypeA4Description", TestEnumA.TypeA4.GetDescription());
+
+			// Advanced test cases
+			Assert.AreEqual("TypeB1Description", ((TestEnumB)TestEnumA.TypeA1).GetDescription());
+			Assert.ThrowsException<ArgumentException>(() => ((TestEnumB)TestEnumA.TypeA2).GetDescription());
+		}
+
+		[TestMethod()]
 		public void GetValueFromMenuDisplayNameTest()
 		{
 			var resultA = EnumUtils.GetValueFromMenuDisplayName<TestEnumA>("TypeA3MenuDisplayName");
@@ -65,14 +80,17 @@ namespace Utils.Tests
 
 		[ConfigurationName("")]
 		[MenuDisplayName("")]
+		[@Description("")]
 		TypeA2,
 
 		[ConfigurationName("TypeA3ConfigurationName")]
 		[MenuDisplayName("TypeA3MenuDisplayName")]
+		[@Description("TypeA3Description")]
 		TypeA3,
 
 		[ConfigurationName("TypeA4ConfigurationName")]
 		[MenuDisplayName("TypeA4MenuDisplayName")]
+		[@Description("TypeA4Description")]
 		TypeA4
 	}
 
@@ -83,6 +101,7 @@ namespace Utils.Tests
 	{
 		[ConfigurationName("TypeB1ConfigurationName")]
 		[MenuDisplayName("TypeB1MenuDisplayName")]
+		[@Description("TypeB1Description")]
 		TypeB1
 	}
 }

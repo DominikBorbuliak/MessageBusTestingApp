@@ -92,14 +92,14 @@ namespace Services.Services
 		{
 			var body = Encoding.UTF8.GetString(arguments.Body.ToArray());
 
-			try
+			if (arguments.BasicProperties.Type.Equals(MessageType.SimpleMessage.GetDescription()))
+			{
+				ConsoleUtils.WriteLineColor($"Simple messsage received: {body}", ConsoleColor.Green);
+			}
+			else if (arguments.BasicProperties.Type.Equals(MessageType.AdvancedMessage.GetDescription()))
 			{
 				var advancedMessage = JsonSerializer.Deserialize<AdvancedMessage>(body);
 				ConsoleUtils.WriteLineColor($"Advanced messsage received:\n{advancedMessage}", ConsoleColor.Green);
-			}
-			catch
-			{
-				ConsoleUtils.WriteLineColor($"Simple messsage received: {body}", ConsoleColor.Green);
 			}
 		}
 

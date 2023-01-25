@@ -59,14 +59,14 @@ namespace Services.Services
 		{
 			var body = arguments.Message.Body.ToString();
 
-			try
+			if (arguments.Message.Subject.Equals(MessageType.SimpleMessage.GetDescription()))
+			{
+				ConsoleUtils.WriteLineColor($"Simple messsage received: {body}", ConsoleColor.Green);
+			}
+			else if (arguments.Message.Subject.Equals(MessageType.AdvancedMessage.GetDescription()))
 			{
 				var advancedMessage = JsonSerializer.Deserialize<AdvancedMessage>(body);
 				ConsoleUtils.WriteLineColor($"Advanced messsage received:\n{advancedMessage}", ConsoleColor.Green);
-			}
-			catch
-			{
-				ConsoleUtils.WriteLineColor($"Simple messsage received: {body}", ConsoleColor.Green);
 			}
 
 			await arguments.CompleteMessageAsync(arguments.Message);

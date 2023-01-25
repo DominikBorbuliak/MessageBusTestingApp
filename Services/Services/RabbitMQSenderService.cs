@@ -66,12 +66,15 @@ namespace Services.Services
 
 		public async Task SendSimpleMessage(SimpleMessage simpleMessage)
 		{
+			var props = _sendOnlyChannel.CreateBasicProperties();
+			props.Type = MessageType.SimpleMessage.GetDescription();
+
 			await Task.Run(() =>
 			{
 				_sendOnlyChannel.BasicPublish(
 					exchange: "",
 					routingKey: "nativesendonlyreceiver",
-					basicProperties: null,
+					basicProperties: props,
 					body: simpleMessage.ToRabbitMQMessage()
 				);
 			});
@@ -79,12 +82,15 @@ namespace Services.Services
 
 		public async Task SendAdvancedMessage(AdvancedMessage advancedMessage)
 		{
+			var props = _sendOnlyChannel.CreateBasicProperties();
+			props.Type = MessageType.AdvancedMessage.GetDescription();
+
 			await Task.Run(() =>
 			{
 				_sendOnlyChannel.BasicPublish(
 					exchange: "",
 					routingKey: "nativesendonlyreceiver",
-					basicProperties: null,
+					basicProperties: props,
 					body: advancedMessage.ToRabbitMQMessage()
 				);
 			});
