@@ -1,6 +1,7 @@
 ﻿using Azure.Messaging.ServiceBus;
 using System.Text;
 using System.Text.Json;
+using Utils;
 
 namespace Services.Models
 {
@@ -51,7 +52,11 @@ namespace Services.Models
 	/// </summary>
 	public static class AdvancedMessageMapper
 	{
-		public static ServiceBusMessage ToServiceBusMessage(this AdvancedMessage advancedMessage) => new ServiceBusMessage(JsonSerializer.Serialize(advancedMessage));
+		public static ServiceBusMessage ToServiceBusMessage(this AdvancedMessage advancedMessage) => new ServiceBusMessage(JsonSerializer.Serialize(advancedMessage))
+		{
+			Subject = MessageType.AdvancedMessage.GetDescription()
+		};
+
 		public static byte[] ToRabbitMQMessage(this AdvancedMessage advancedMessage) => Encoding.UTF8.GetBytes(JsonSerializer.Serialize(advancedMessage));
 	}
 }

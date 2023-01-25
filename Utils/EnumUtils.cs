@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.ComponentModel;
+using System.Reflection;
 
 namespace Utils
 {
@@ -25,6 +26,16 @@ namespace Utils
 		/// string.Empty - if menu display name is missing or empty
 		/// </returns>
 		public static string GetMenuDisplayName<E>(this E value) where E : Enum => value.GetAttribute<E, MenuDisplayNameAttribute>()?.MenuDisplayName ?? string.Empty;
+
+		/// <summary>
+		/// Get description of enum value
+		/// </summary>
+		/// <typeparam name="E">Type of enum</typeparam>
+		/// <param name="value">Enum value</param>
+		/// <returns>
+		/// Description of enum value - if exists
+		/// string.Empty - if mdescription is missing or empty</returns>
+		public static string GetDescription<E>(this E value) where E : Enum => value.GetAttribute<E, DescriptionAttribute>()?.Description ?? string.Empty;
 
 		/// <summary>
 		/// Get specified attribute of enum value
