@@ -18,8 +18,18 @@ namespace Services.Contracts
 		/// <returns></returns>
 		Task SendAdvancedMessage(AdvancedMessage advancedMessage);
 
+		/// <summary>
+		/// Sends rectangular prism request and waits for response
+		/// </summary>
+		/// <param name="rectangularPrismRequest"></param>
+		/// <returns></returns>
 		Task SendAndReplyRectangularPrism(RectangularPrismRequest rectangularPrismRequest);
 
+		/// <summary>
+		/// Sends process timeout request and waits for response
+		/// </summary>
+		/// <param name="processTimeoutRequest"></param>
+		/// <returns></returns>
 		Task SendAndReplyProcessTimeout(ProcessTimeoutRequest processTimeoutRequest);
 
 		/// <summary>
