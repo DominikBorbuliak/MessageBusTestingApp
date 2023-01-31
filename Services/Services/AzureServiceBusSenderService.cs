@@ -9,6 +9,7 @@ namespace Services.Services
 {
 	public class AzureServiceBusSenderService : ISenderService
 	{
+		private readonly IConfiguration _configuration;
 		private readonly ServiceBusClient _serviceBusClient;
 
 		private readonly ServiceBusSender _sendOnlyServiceBusSender;
@@ -19,16 +20,17 @@ namespace Services.Services
 
 		public AzureServiceBusSenderService(IConfiguration configuration)
 		{
-			_serviceBusClient = new ServiceBusClient(configuration.GetConnectionString("AzureServiceBus"), new ServiceBusClientOptions()
+			_configuration = configuration;
+			_serviceBusClient = new ServiceBusClient(_configuration.GetConnectionString("AzureServiceBus"), new ServiceBusClientOptions()
 			{
 				TransportType = ServiceBusTransportType.AmqpWebSockets
 			});
 
 			_sendAndReplySessionId = Guid.NewGuid();
 
-			_sendOnlyServiceBusSender = _serviceBusClient.CreateSender(configuration.GetSection("ConnectionSettings")["SendOnlyReceiverQueueName"]);
-			_sendAndReplyServiceBusSender = _serviceBusClient.CreateSender(configuration.GetSection("ConnectionSettings")["SendAndReplyReceiverQueueName"]);
-			_sendAndReplyServiceBusReceiver = _serviceBusClient.AcceptSessionAsync(configuration.GetSection("ConnectionSettings")["SendAndReplySenderQueueName"], _sendAndReplySessionId.ToString()).Result;
+			_sendOnlyServiceBusSender = _serviceBusClient.CreateSender(_configuration.GetSection("ConnectionSettings")["SendOnlyReceiverQueueName"]);
+			_sendAndReplyServiceBusSender = _serviceBusClient.CreateSender(_configuration.GetSection("ConnectionSettings")["SendAndReplyReceiverQueueName"]);
+			_sendAndReplyServiceBusReceiver = _serviceBusClient.AcceptSessionAsync(_configuration.GetSection("ConnectionSettings")["SendAndReplySenderQueueName"], _sendAndReplySessionId.ToString()).Result;
 		}
 
 		public async Task SendSimpleMessage(SimpleMessage simpleMessage)
@@ -53,6 +55,25 @@ namespace Services.Services
 
 			if (response != null)
 				ConsoleUtils.WriteLineColor(response.ToString(), ConsoleColor.Green);
+			else
+				ConsoleUtils.WriteLineColor("No response found!", ConsoleColor.Red);
+		}
+
+		public async Task SendAndReplyProcessTimeout(ProcessTimeoutRequest processTimeoutRequest)
+		{
+			var processSesionId = Guid.NewGuid().ToString();
+			var processServiceBusReceiver = await _serviceBusClient.AcceptSessionAsync(_configuration.GetSection("ConnectionSettings")["SendAndReplySenderQueueName"], processSesionId);
+
+			var serviceBusMessage = processTimeoutRequest.ToServiceBusMessage();
+			serviceBusMessage.SessionId = processSesionId;
+
+			await _sendAndReplyServiceBusSender.SendMessageAsync(serviceBusMessage);
+
+			var responseMessage = await processServiceBusReceiver.ReceiveMessageAsync();
+			var response = JsonSerializer.Deserialize<ProcessTimeoutResponse>(responseMessage.Body);
+
+			if (response != null)
+				ConsoleUtils.WriteLineColor($"Received process timeout response: {response.ProcessName}", ConsoleColor.Green);
 			else
 				ConsoleUtils.WriteLineColor("No response found!", ConsoleColor.Red);
 		}

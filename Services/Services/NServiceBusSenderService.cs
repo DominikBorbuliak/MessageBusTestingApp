@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Azure;
+using Microsoft.Extensions.Configuration;
 using Services.Contracts;
 using Services.Models;
 using Utils;
@@ -27,6 +28,7 @@ namespace Services.Services
 				var sendAndReplyTransport = sendAndReplyEndpointConfiguration.UseTransport<AzureServiceBusTransport>();
 				sendAndReplyTransport.ConnectionString(configuration.GetConnectionString("AzureServiceBus"));
 				sendAndReplyTransport.Routing().RouteToEndpoint(typeof(RectangularPrismRequest), configuration.GetSection("ConnectionSettings")["SendAndReplyReceiverEndpointName"]);
+				sendAndReplyTransport.Routing().RouteToEndpoint(typeof(ProcessTimeoutRequest), configuration.GetSection("ConnectionSettings")["SendAndReplyReceiverEndpointName"]);
 				sendAndReplyTransport.TopicName(configuration.GetSection("ConnectionSettings")["TopicName"]);
 			}
 			else
@@ -41,6 +43,7 @@ namespace Services.Services
 				sendAndReplyTransport.UseConventionalRoutingTopology(QueueType.Quorum);
 				sendAndReplyTransport.ConnectionString($"host={configuration.GetSection("ConnectionSettings")["HostName"]}");
 				sendAndReplyTransport.Routing().RouteToEndpoint(typeof(RectangularPrismRequest), configuration.GetSection("ConnectionSettings")["SendAndReplyReceiverEndpointName"]);
+				sendAndReplyTransport.Routing().RouteToEndpoint(typeof(ProcessTimeoutRequest), configuration.GetSection("ConnectionSettings")["SendAndReplyReceiverEndpointName"]);
 			}
 
 			sendOnlyEndpointConfiguration.EnableInstallers();
@@ -65,6 +68,11 @@ namespace Services.Services
 			await _sendAndReplyEndpointInstance.Send(rectangularPrismRequest);
 		}
 
+		public async Task SendAndReplyProcessTimeout(ProcessTimeoutRequest processTimeoutRequest)
+		{
+			await _sendAndReplyEndpointInstance.Send(processTimeoutRequest);
+		}
+
 		public async Task FinishJob()
 		{
 			await _sendOnlyEndpointInstance.Stop();
@@ -79,6 +87,17 @@ namespace Services.Services
 			await Task.Run(() =>
 			{
 				ConsoleUtils.WriteLineColor(message.ToString(), ConsoleColor.Green);
+			}, context.CancellationToken);
+		}
+	}
+
+	public class NServiceBusProcessTimeoutResponseHandler : IHandleMessages<ProcessTimeoutResponse>
+	{
+		public async Task Handle(ProcessTimeoutResponse message, IMessageHandlerContext context)
+		{
+			await Task.Run(() =>
+			{
+				ConsoleUtils.WriteLineColor($"Received process timeout response: {message.ProcessName}", ConsoleColor.Green);
 			}, context.CancellationToken);
 		}
 	}

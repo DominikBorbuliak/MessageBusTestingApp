@@ -20,6 +20,9 @@ namespace Services.Models
 		SendOnlyNRandomAdvancedMessages,
 
 		[MenuDisplayName("Send & Reply - Surface area and Volume of Rectangular Prism")]
-		SendAndReplyRectangularPrism
+		SendAndReplyRectangularPrism,
+
+		[MenuDisplayName("Send & Reply - Simulate N Clients")]
+		SendAndReplySimulateNClients
 	}
 }

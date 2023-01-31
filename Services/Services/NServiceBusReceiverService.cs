@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Services.Contracts;
 using Services.Models;
+using System.Text.Json;
 using Utils;
 
 namespace Services.Services
@@ -100,6 +101,23 @@ namespace Services.Services
 			ConsoleUtils.WriteLineColor("Sending rectangular prism response", ConsoleColor.Green);
 
 			await context.Reply(rectangularPrismResponse);
+		}
+
+		public class NServiceBusProcessTimeoutRequestHandler : IHandleMessages<ProcessTimeoutRequest>
+		{
+			public async Task Handle(ProcessTimeoutRequest processTimeoutRequest, IMessageHandlerContext context)
+			{
+				ConsoleUtils.WriteLineColor($"Received process timeout request: {processTimeoutRequest.ProcessName}. Waiting for: {processTimeoutRequest.MillisecondsTimeout}ms", ConsoleColor.Green);
+				await Task.Delay(processTimeoutRequest.MillisecondsTimeout, context.CancellationToken);
+				ConsoleUtils.WriteLineColor($"Sending process timeout response: {processTimeoutRequest.ProcessName}", ConsoleColor.Green);
+
+				var processTimeoutResponse = new ProcessTimeoutResponse
+				{
+					ProcessName = processTimeoutRequest.ProcessName
+				};
+
+				await context.Reply(processTimeoutResponse);
+			}
 		}
 	}
 }

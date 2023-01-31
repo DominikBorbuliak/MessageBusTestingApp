@@ -47,13 +47,16 @@ namespace Sender
 						case ActionType.SendAndReplyRectangularPrism:
 							await HandleSendAndReplyRectangularPrism();
 							break;
+						case ActionType.SendAndReplySimulateNClients:
+							await HandleSendAndReplySimulateNClients();
+							break;
 					}
 
 					ConsoleUtils.WriteLineColor("Message was successfully send to queue!", ConsoleColor.Green);
 					Thread.Sleep(5000);
 				}
 			}
-			catch
+			catch (Exception ex)
 			{
 				ConsoleUtils.WriteLineColor($"Error occured. Press anything to exit application.", ConsoleColor.Red);
 				Console.ReadKey();
@@ -144,6 +147,32 @@ namespace Sender
 			};
 
 			await _senderService.SendAndReplyRectangularPrism(rectangularPrismRequest);
+		}
+
+		private async Task HandleSendAndReplySimulateNClients()
+		{
+			var n = ConsoleUtils.GetUserIntegerInput("Please enter the number of clients you want to simulate:");
+			var names = new List<string>();
+			var timeouts = new List<int>();
+
+			for (var i = 0; i < n; i++)
+			{
+				names.Add(ConsoleUtils.GetUserTextInput("Please insert the name of process:"));
+				timeouts.Add(ConsoleUtils.GetUserIntegerInput("Please insert the timeout for process in miliseconds:"));
+			}
+
+			var tasks = new List<Task>();
+
+			for (var i = 0; i < n; i++)
+			{
+				tasks.Add(_senderService.SendAndReplyProcessTimeout(new ProcessTimeoutRequest
+				{
+					ProcessName = names[i],
+					MillisecondsTimeout = timeouts[i]
+				}));
+			}
+
+			await Task.WhenAll(tasks);
 		}
 	}
 }

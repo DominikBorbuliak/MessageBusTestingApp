@@ -36,7 +36,7 @@ namespace Services.Services
 
 			await _sendOnlyServiceBusProcessor.StartProcessingAsync();
 
-			_sendAndReplyServiceBusProcessor.ProcessMessageAsync += RectangularPrismRequestHandler;
+			_sendAndReplyServiceBusProcessor.ProcessMessageAsync += RequestHandler;
 			_sendAndReplyServiceBusProcessor.ProcessErrorAsync += ErrorHandler;
 
 			await _sendAndReplyServiceBusProcessor.StartProcessingAsync();
@@ -72,25 +72,46 @@ namespace Services.Services
 			await arguments.CompleteMessageAsync(arguments.Message);
 		}
 
-		private async Task RectangularPrismRequestHandler(ProcessSessionMessageEventArgs arguments)
+		private async Task RequestHandler(ProcessSessionMessageEventArgs arguments)
 		{
 			var body = arguments.Message.Body.ToString();
 
-			var rectangularPrismRequest = JsonSerializer.Deserialize<RectangularPrismRequest>(body);
-			ConsoleUtils.WriteLineColor($"Rectangular prism request received:\n{rectangularPrismRequest}", ConsoleColor.Green);
-
-			var rectangularPrismResponse = new RectangularPrismResponse
+			if (arguments.Message.Subject.Equals(MessageType.RectangularPrismRequest.GetDescription()))
 			{
-				SurfaceArea = 2 * (rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeB + rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeC + rectangularPrismRequest.EdgeB * rectangularPrismRequest.EdgeC),
-				Volume = rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeB * rectangularPrismRequest.EdgeC
-			};
+				var rectangularPrismRequest = JsonSerializer.Deserialize<RectangularPrismRequest>(body);
+				ConsoleUtils.WriteLineColor($"Rectangular prism request received:\n{rectangularPrismRequest}", ConsoleColor.Green);
 
-			ConsoleUtils.WriteLineColor("Sending rectangular prism response", ConsoleColor.Green);
+				var rectangularPrismResponse = new RectangularPrismResponse
+				{
+					SurfaceArea = 2 * (rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeB + rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeC + rectangularPrismRequest.EdgeB * rectangularPrismRequest.EdgeC),
+					Volume = rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeB * rectangularPrismRequest.EdgeC
+				};
 
-			var response = rectangularPrismResponse.ToServiceBusMessage();
-			response.SessionId = arguments.SessionId;
+				ConsoleUtils.WriteLineColor("Sending rectangular prism response", ConsoleColor.Green);
 
-			await _sendAndReplyServiceBusSender.SendMessageAsync(response);
+				var response = rectangularPrismResponse.ToServiceBusMessage();
+				response.SessionId = arguments.SessionId;
+
+				await _sendAndReplyServiceBusSender.SendMessageAsync(response);
+			}
+			else if (arguments.Message.Subject.Equals(MessageType.ProcessTimeoutRequest.GetDescription()))
+			{
+				var processTimeoutRequest = JsonSerializer.Deserialize<ProcessTimeoutRequest>(body);
+
+				ConsoleUtils.WriteLineColor($"Received process timeout request: {processTimeoutRequest.ProcessName}. Waiting for: {processTimeoutRequest.MillisecondsTimeout}ms", ConsoleColor.Green);
+				await Task.Delay(processTimeoutRequest.MillisecondsTimeout);
+				ConsoleUtils.WriteLineColor($"Sending process timeout response: {processTimeoutRequest.ProcessName}", ConsoleColor.Green);
+
+				var processTimeoutResponse = new ProcessTimeoutResponse
+				{
+					ProcessName = processTimeoutRequest.ProcessName
+				};
+
+				var response = processTimeoutResponse.ToServiceBusMessage();
+				response.SessionId = arguments.SessionId;
+
+				await _sendAndReplyServiceBusSender.SendMessageAsync(response);
+			}
 
 			await arguments.CompleteMessageAsync(arguments.Message);
 		}

@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Azure;
+using Microsoft.Extensions.Configuration;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using Services.Contracts;
@@ -11,27 +12,28 @@ namespace Services.Services
 {
 	public class RabbitMQSenderService : ISenderService
 	{
+		private readonly IConfiguration _configuration;
 		private readonly IConnection _connection;
 
 		private readonly IModel _sendOnlyChannel;
 
 		private readonly IModel _sendAndReplyChannel;
 		private readonly EventingBasicConsumer _sendAndReplyConsumer;
-		private readonly IBasicProperties _sendAndReplyProps;
-		private readonly Guid _sendAndReplyCorrelationId;
 
 		public RabbitMQSenderService(IConfiguration configuration)
 		{
+			_configuration = configuration;
+
 			var connectionFactory = new ConnectionFactory
 			{
-				HostName = configuration.GetSection("ConnectionSettings")["HostName"]
+				HostName = _configuration.GetSection("ConnectionSettings")["HostName"]
 			};
 
 			_connection = connectionFactory.CreateConnection();
 			_sendOnlyChannel = _connection.CreateModel();
 
 			_sendOnlyChannel.QueueDeclare(
-				queue: configuration.GetSection("ConnectionSettings")["SendOnlyReceiverQueueName"],
+				queue: _configuration.GetSection("ConnectionSettings")["SendOnlyReceiverQueueName"],
 				durable: false,
 				exclusive: false,
 				autoDelete: false,
@@ -41,7 +43,7 @@ namespace Services.Services
 			_sendAndReplyChannel = _connection.CreateModel();
 
 			_sendAndReplyChannel.QueueDeclare(
-				queue: configuration.GetSection("ConnectionSettings")["SendAndReplySenderQueueName"],
+				queue: _configuration.GetSection("ConnectionSettings")["SendAndReplySenderQueueName"],
 				durable: false,
 				exclusive: false,
 				autoDelete: false,
@@ -49,17 +51,12 @@ namespace Services.Services
 			);
 
 			_sendAndReplyConsumer = new EventingBasicConsumer(_sendAndReplyChannel);
-			_sendAndReplyProps = _sendAndReplyChannel.CreateBasicProperties();
-			_sendAndReplyCorrelationId = Guid.NewGuid();
-			_sendAndReplyProps.CorrelationId = _sendAndReplyCorrelationId.ToString();
 
-			_sendAndReplyProps.ReplyTo = configuration.GetSection("ConnectionSettings")["SendAndReplySenderQueueName"];
-
-			_sendAndReplyConsumer.Received += (_, ea) => RectangularPrismResponseHandler(ea);
+			_sendAndReplyConsumer.Received += (_, ea) => ResponseHandler(ea);
 
 			_sendAndReplyChannel.BasicConsume(
 				consumer: _sendAndReplyConsumer,
-				queue: configuration.GetSection("ConnectionSettings")["SendAndReplySenderQueueName"],
+				queue: _configuration.GetSection("ConnectionSettings")["SendAndReplySenderQueueName"],
 				autoAck: true
 			);
 		}
@@ -98,13 +95,40 @@ namespace Services.Services
 
 		public async Task SendAndReplyRectangularPrism(RectangularPrismRequest rectangularPrismRequest)
 		{
+			var props = _sendOnlyChannel.CreateBasicProperties();
+			var correlationId = Guid.NewGuid().ToString();
+
+			props.Type = MessageType.RectangularPrismRequest.GetDescription();
+			props.CorrelationId = correlationId;
+			props.ReplyTo = _configuration.GetSection("ConnectionSettings")["SendAndReplySenderQueueName"];
+
 			await Task.Run(() =>
 			{
 				_sendAndReplyChannel.BasicPublish(
 					exchange: "",
 					routingKey: "nativesendandreplyreceiver",
-					basicProperties: _sendAndReplyProps,
+					basicProperties: props,
 					body: rectangularPrismRequest.ToRabbitMQMessage()
+				);
+			});
+		}
+
+		public async Task SendAndReplyProcessTimeout(ProcessTimeoutRequest processTimeoutRequest)
+		{
+			var props = _sendOnlyChannel.CreateBasicProperties();
+			var correlationId = Guid.NewGuid().ToString();
+
+			props.Type = MessageType.ProcessTimeoutRequest.GetDescription();
+			props.CorrelationId = correlationId;
+			props.ReplyTo = _configuration.GetSection("ConnectionSettings")["SendAndReplySenderQueueName"];
+
+			await Task.Run(() =>
+			{
+				_sendAndReplyChannel.BasicPublish(
+					exchange: "",
+					routingKey: "nativesendandreplyreceiver",
+					basicProperties: props,
+					body: processTimeoutRequest.ToRabbitMQMessage()
 				);
 			});
 		}
@@ -119,16 +143,24 @@ namespace Services.Services
 			});
 		}
 
-		private void RectangularPrismResponseHandler(BasicDeliverEventArgs arguments)
+		private void ResponseHandler(BasicDeliverEventArgs arguments)
 		{
 			var body = Encoding.UTF8.GetString(arguments.Body.ToArray());
 
-			var response = JsonSerializer.Deserialize<RectangularPrismResponse>(body);
+			if (arguments.BasicProperties.Type.Equals(MessageType.RectangularPrismResponse.GetDescription()))
+			{
+				var response = JsonSerializer.Deserialize<RectangularPrismResponse>(body);
 
-			if (response != null)
-				ConsoleUtils.WriteLineColor(response.ToString(), ConsoleColor.Green);
-			else
-				ConsoleUtils.WriteLineColor("No response found!", ConsoleColor.Red);
+				if (response != null)
+					ConsoleUtils.WriteLineColor(response.ToString(), ConsoleColor.Green);
+				else
+					ConsoleUtils.WriteLineColor("No response found!", ConsoleColor.Red);
+			}
+			else if (arguments.BasicProperties.Type.Equals(MessageType.ProcessTimeoutResponse.GetDescription()))
+			{
+				var response = JsonSerializer.Deserialize<ProcessTimeoutResponse>(body);
+				ConsoleUtils.WriteLineColor($"Received process timeout response: {response.ProcessName}", ConsoleColor.Green);
+			}
 		}
 	}
 }
