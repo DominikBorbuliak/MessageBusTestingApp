@@ -56,7 +56,7 @@ namespace Services.Services
 			if (response != null)
 				ConsoleUtils.WriteLineColor(response.ToString(), ConsoleColor.Green);
 			else
-				ConsoleUtils.WriteLineColor("No response found!", ConsoleColor.Red);
+				ConsoleUtils.WriteLineColor("No response found for: RectangularPrismResponse!", ConsoleColor.Red);
 		}
 
 		public async Task SendAndReplyProcessTimeout(ProcessTimeoutRequest processTimeoutRequest)
@@ -75,14 +75,16 @@ namespace Services.Services
 			if (response != null)
 				ConsoleUtils.WriteLineColor($"Received process timeout response: {response.ProcessName}", ConsoleColor.Green);
 			else
-				ConsoleUtils.WriteLineColor("No response found!", ConsoleColor.Red);
+				ConsoleUtils.WriteLineColor("No response found for: ProcessTimeoutResponse!", ConsoleColor.Red);
 		}
 
 		public async Task FinishJob()
 		{
 			await _sendOnlyServiceBusSender.DisposeAsync();
+
 			await _sendAndReplyServiceBusSender.DisposeAsync();
 			await _sendAndReplyServiceBusReceiver.DisposeAsync();
+
 			await _serviceBusClient.DisposeAsync();
 		}
 	}

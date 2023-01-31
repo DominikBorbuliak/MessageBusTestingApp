@@ -55,6 +55,11 @@ namespace Services.Services
 			await _serviceBusClient.DisposeAsync();
 		}
 
+		/// <summary>
+		/// Message handler used to process simple and advanced message
+		/// </summary>
+		/// <param name="arguments"></param>
+		/// <returns></returns>
 		private async Task MessageHandler(ProcessMessageEventArgs arguments)
 		{
 			var body = arguments.Message.Body.ToString();
@@ -72,6 +77,11 @@ namespace Services.Services
 			await arguments.CompleteMessageAsync(arguments.Message);
 		}
 
+		/// <summary>
+		/// Request handler used to process rectangular prism request and process timeout request
+		/// </summary>
+		/// <param name="arguments"></param>
+		/// <returns></returns>
 		private async Task RequestHandler(ProcessSessionMessageEventArgs arguments)
 		{
 			var body = arguments.Message.Body.ToString();
@@ -79,6 +89,13 @@ namespace Services.Services
 			if (arguments.Message.Subject.Equals(MessageType.RectangularPrismRequest.GetDescription()))
 			{
 				var rectangularPrismRequest = JsonSerializer.Deserialize<RectangularPrismRequest>(body);
+
+				if (rectangularPrismRequest == null)
+				{
+					ConsoleUtils.WriteLineColor("No request found for: RectangularPrismRequest!", ConsoleColor.Red);
+					return;
+				}
+
 				ConsoleUtils.WriteLineColor($"Rectangular prism request received:\n{rectangularPrismRequest}", ConsoleColor.Green);
 
 				var rectangularPrismResponse = new RectangularPrismResponse
@@ -97,6 +114,12 @@ namespace Services.Services
 			else if (arguments.Message.Subject.Equals(MessageType.ProcessTimeoutRequest.GetDescription()))
 			{
 				var processTimeoutRequest = JsonSerializer.Deserialize<ProcessTimeoutRequest>(body);
+
+				if (processTimeoutRequest == null)
+				{
+					ConsoleUtils.WriteLineColor("No request found for: ProcessTimeoutRequest!", ConsoleColor.Red);
+					return;
+				}
 
 				ConsoleUtils.WriteLineColor($"Received process timeout request: {processTimeoutRequest.ProcessName}. Waiting for: {processTimeoutRequest.MillisecondsTimeout}ms", ConsoleColor.Green);
 				await Task.Delay(processTimeoutRequest.MillisecondsTimeout);

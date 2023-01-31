@@ -1,5 +1,4 @@
-﻿using Azure;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using Services.Contracts;
@@ -63,11 +62,11 @@ namespace Services.Services
 
 		public async Task SendSimpleMessage(SimpleMessage simpleMessage)
 		{
-			var props = _sendOnlyChannel.CreateBasicProperties();
-			props.Type = MessageType.SimpleMessage.GetDescription();
-
 			await Task.Run(() =>
 			{
+				var props = _sendOnlyChannel.CreateBasicProperties();
+				props.Type = MessageType.SimpleMessage.GetDescription();
+
 				_sendOnlyChannel.BasicPublish(
 					exchange: "",
 					routingKey: "nativesendonlyreceiver",
@@ -79,11 +78,11 @@ namespace Services.Services
 
 		public async Task SendAdvancedMessage(AdvancedMessage advancedMessage)
 		{
-			var props = _sendOnlyChannel.CreateBasicProperties();
-			props.Type = MessageType.AdvancedMessage.GetDescription();
-
 			await Task.Run(() =>
 			{
+				var props = _sendOnlyChannel.CreateBasicProperties();
+				props.Type = MessageType.AdvancedMessage.GetDescription();
+
 				_sendOnlyChannel.BasicPublish(
 					exchange: "",
 					routingKey: "nativesendonlyreceiver",
@@ -95,15 +94,15 @@ namespace Services.Services
 
 		public async Task SendAndReplyRectangularPrism(RectangularPrismRequest rectangularPrismRequest)
 		{
-			var props = _sendOnlyChannel.CreateBasicProperties();
-			var correlationId = Guid.NewGuid().ToString();
-
-			props.Type = MessageType.RectangularPrismRequest.GetDescription();
-			props.CorrelationId = correlationId;
-			props.ReplyTo = _configuration.GetSection("ConnectionSettings")["SendAndReplySenderQueueName"];
-
 			await Task.Run(() =>
 			{
+				var props = _sendOnlyChannel.CreateBasicProperties();
+				var correlationId = Guid.NewGuid().ToString();
+
+				props.Type = MessageType.RectangularPrismRequest.GetDescription();
+				props.CorrelationId = correlationId;
+				props.ReplyTo = _configuration.GetSection("ConnectionSettings")["SendAndReplySenderQueueName"];
+
 				_sendAndReplyChannel.BasicPublish(
 					exchange: "",
 					routingKey: "nativesendandreplyreceiver",
@@ -115,15 +114,15 @@ namespace Services.Services
 
 		public async Task SendAndReplyProcessTimeout(ProcessTimeoutRequest processTimeoutRequest)
 		{
-			var props = _sendOnlyChannel.CreateBasicProperties();
-			var correlationId = Guid.NewGuid().ToString();
-
-			props.Type = MessageType.ProcessTimeoutRequest.GetDescription();
-			props.CorrelationId = correlationId;
-			props.ReplyTo = _configuration.GetSection("ConnectionSettings")["SendAndReplySenderQueueName"];
-
 			await Task.Run(() =>
 			{
+				var props = _sendOnlyChannel.CreateBasicProperties();
+				var correlationId = Guid.NewGuid().ToString();
+
+				props.Type = MessageType.ProcessTimeoutRequest.GetDescription();
+				props.CorrelationId = correlationId;
+				props.ReplyTo = _configuration.GetSection("ConnectionSettings")["SendAndReplySenderQueueName"];
+
 				_sendAndReplyChannel.BasicPublish(
 					exchange: "",
 					routingKey: "nativesendandreplyreceiver",
@@ -143,6 +142,10 @@ namespace Services.Services
 			});
 		}
 
+		/// <summary>
+		/// Handler method used for rectangular prism and process timeout responses
+		/// </summary>
+		/// <param name="arguments"></param>
 		private void ResponseHandler(BasicDeliverEventArgs arguments)
 		{
 			var body = Encoding.UTF8.GetString(arguments.Body.ToArray());
@@ -154,12 +157,16 @@ namespace Services.Services
 				if (response != null)
 					ConsoleUtils.WriteLineColor(response.ToString(), ConsoleColor.Green);
 				else
-					ConsoleUtils.WriteLineColor("No response found!", ConsoleColor.Red);
+					ConsoleUtils.WriteLineColor("No response found for: RectangularPrismResponse!", ConsoleColor.Red);
 			}
 			else if (arguments.BasicProperties.Type.Equals(MessageType.ProcessTimeoutResponse.GetDescription()))
 			{
 				var response = JsonSerializer.Deserialize<ProcessTimeoutResponse>(body);
-				ConsoleUtils.WriteLineColor($"Received process timeout response: {response.ProcessName}", ConsoleColor.Green);
+
+				if (response != null)
+					ConsoleUtils.WriteLineColor($"Received process timeout response: {response.ProcessName}", ConsoleColor.Green);
+				else
+					ConsoleUtils.WriteLineColor("No response found for: ProcessTimeoutResponse!", ConsoleColor.Red);
 			}
 		}
 	}

@@ -90,21 +90,34 @@ namespace Services.Services
 			});
 		}
 
+		/// <summary>
+		/// Handler method used for simple and advanced messages
+		/// </summary>
+		/// <param name="arguments"></param>
+		/// <returns></returns>
 		private async Task MessageHandler(BasicDeliverEventArgs arguments)
 		{
-			var body = Encoding.UTF8.GetString(arguments.Body.ToArray());
+			await Task.Run(() =>
+			{
+				var body = Encoding.UTF8.GetString(arguments.Body.ToArray());
 
-			if (arguments.BasicProperties.Type.Equals(MessageType.SimpleMessage.GetDescription()))
-			{
-				ConsoleUtils.WriteLineColor($"Simple messsage received: {body}", ConsoleColor.Green);
-			}
-			else if (arguments.BasicProperties.Type.Equals(MessageType.AdvancedMessage.GetDescription()))
-			{
-				var advancedMessage = JsonSerializer.Deserialize<AdvancedMessage>(body);
-				ConsoleUtils.WriteLineColor($"Advanced messsage received:\n{advancedMessage}", ConsoleColor.Green);
-			}
+				if (arguments.BasicProperties.Type.Equals(MessageType.SimpleMessage.GetDescription()))
+				{
+					ConsoleUtils.WriteLineColor($"Simple messsage received: {body}", ConsoleColor.Green);
+				}
+				else if (arguments.BasicProperties.Type.Equals(MessageType.AdvancedMessage.GetDescription()))
+				{
+					var advancedMessage = JsonSerializer.Deserialize<AdvancedMessage>(body);
+					ConsoleUtils.WriteLineColor($"Advanced messsage received:\n{advancedMessage}", ConsoleColor.Green);
+				}
+			});
 		}
 
+		/// <summary>
+		/// Handler method used for rectangular prism and process timeout requests
+		/// </summary>
+		/// <param name="arguments"></param>
+		/// <returns></returns>
 		private async Task RequestHandler(BasicDeliverEventArgs arguments)
 		{
 			var body = Encoding.UTF8.GetString(arguments.Body.ToArray());
@@ -112,6 +125,13 @@ namespace Services.Services
 			if (arguments.BasicProperties.Type.Equals(MessageType.RectangularPrismRequest.GetDescription()))
 			{
 				var rectangularPrismRequest = JsonSerializer.Deserialize<RectangularPrismRequest>(body);
+
+				if (rectangularPrismRequest == null)
+				{
+					ConsoleUtils.WriteLineColor("No request found for: RectangularPrismRequest!", ConsoleColor.Red);
+					return;
+				}
+
 				ConsoleUtils.WriteLineColor($"Rectangular prism request received:\n{rectangularPrismRequest}", ConsoleColor.Green);
 
 				var rectangularPrismResponse = new RectangularPrismResponse
@@ -136,6 +156,12 @@ namespace Services.Services
 			else if (arguments.BasicProperties.Type.Equals(MessageType.ProcessTimeoutRequest.GetDescription()))
 			{
 				var processTimeoutRequest = JsonSerializer.Deserialize<ProcessTimeoutRequest>(body);
+
+				if (processTimeoutRequest == null)
+				{
+					ConsoleUtils.WriteLineColor("No request found for: ProcessTimeoutRequest!", ConsoleColor.Red);
+					return;
+				}
 
 				ConsoleUtils.WriteLineColor($"Received process timeout request: {processTimeoutRequest.ProcessName}. Waiting for: {processTimeoutRequest.MillisecondsTimeout}ms", ConsoleColor.Green);
 				await Task.Delay(processTimeoutRequest.MillisecondsTimeout);
