@@ -3,6 +3,9 @@ using Utils;
 
 namespace Services.Data
 {
+	/// <summary>
+	/// Static class used to display intro console and setup console
+	/// </summary>
 	public static class Setup
 	{
 
@@ -33,12 +36,15 @@ ___  ___                                       ______
 
 		public static MessageBusType? Run(string consoleTitle)
 		{
+			// Setup title
 			Console.Title = consoleTitle;
 
+			// Setup colors and cursor visibility
 			Console.BackgroundColor = ConsoleColor.Black;
 			Console.ForegroundColor = ConsoleColor.White;
 			Console.CursorVisible = false;
 
+			// Display intro 
 			ConsoleUtils.WriteLineColor(ApplicationName, ConsoleColor.Cyan);
 			ConsoleUtils.WriteLineColor(AuthorLine, ConsoleColor.DarkCyan);
 			Console.WriteLine();
@@ -48,9 +54,11 @@ ___  ___                                       ______
 
 			Console.ReadKey();
 
+			// Display main menu
 			var mainMenu = new Menu<MessageBusType>(string.Format(PromptBeforeMainMenu, consoleTitle), PromptAfterMainMenu, true);
 			var pickedMainMenuItem = mainMenu.HandleMenuMovement();
 
+			// Change title only if EXIT was not picked from main menu
 			if (pickedMainMenuItem != null)
 				Console.Title = $"{((MessageBusType)pickedMainMenuItem).GetMenuDisplayName()} {consoleTitle}";
 
