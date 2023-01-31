@@ -15,9 +15,10 @@ namespace Receiver
 
 		private static void Main()
 		{
+			// Display intro screen and main menu
 			var pickedMainMenuItem = Setup.Run("Receiver");
 
-			// Exit was selected
+			// Exit was selected in main menu
 			if (pickedMainMenuItem == null)
 				return;
 

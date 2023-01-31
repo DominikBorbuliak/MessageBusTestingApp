@@ -15,9 +15,10 @@ namespace Sender
 
 		private static void Main()
 		{
+			// Display intro screen and main menu
 			var pickedMainMenuItem = Setup.Run("Sender");
 
-			// Exit was selected
+			// Exit was selected in main menu
 			if (pickedMainMenuItem == null)
 				return;
 
