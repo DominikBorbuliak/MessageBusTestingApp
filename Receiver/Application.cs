@@ -21,8 +21,16 @@ namespace Receiver
 			{
 				await _receiverService.StartJob();
 
-				Console.WriteLine("Press any key to exit application and stop processing!");
-				Console.ReadKey();
+				ConsoleKey key;
+				do
+				{
+					Console.WriteLine("Press ESC to exit application or C to clear the console!");
+					key = Console.ReadKey(true).Key;
+
+					if (key == ConsoleKey.C)
+						Console.Clear();
+
+				} while (key != ConsoleKey.Escape);
 			}
 			finally
 			{
