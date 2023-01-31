@@ -8,30 +8,20 @@ using Utils;
 
 namespace Sender
 {
-    public class Program
+	public class Program
 	{
 		private static IConfiguration Configuration { get; set; } = null!;
 		private static MessageBusType MessageBusType;
 
 		private static void Main()
 		{
-			// Setup console
-			Console.BackgroundColor = ConsoleColor.Black;
-			Console.ForegroundColor = ConsoleColor.White;
-			Console.CursorVisible = false;
-			Console.Title = "Sender";
-
-			// Display main menu
-			Menu<MessageBusType> mainMenu = new Menu<MessageBusType>("Please select message bus sender type", "Use arrow DOWN and UP to navigate through menu.\nPress ENTER to submit.", true);
-			var pickedMainMenuItem = mainMenu.HandleMenuMovement();
+			var pickedMainMenuItem = Setup.Run("Sender");
 
 			// Exit was selected
 			if (pickedMainMenuItem == null)
 				return;
 
 			MessageBusType = (MessageBusType)pickedMainMenuItem;
-			Console.Clear();
-			Console.Title = $"{MessageBusType.GetMenuDisplayName()} Sender";
 
 			// Build configuration file
 			var builder = new ConfigurationBuilder()
