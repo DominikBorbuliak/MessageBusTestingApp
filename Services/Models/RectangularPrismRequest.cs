@@ -1,10 +1,13 @@
 ﻿using Azure.Messaging.ServiceBus;
-using System.Text.Json;
 using System.Text;
+using System.Text.Json;
 using Utils;
 
 namespace Services.Models
 {
+	/// <summary>
+	/// Model used to simulate request that need to wait for response
+	/// </summary>
 	public class RectangularPrismRequest : IMessage
 	{
 		public double EdgeA { get; set; }
@@ -23,6 +26,9 @@ namespace Services.Models
 		}
 	}
 
+	/// <summary>
+	/// Mapper class to format rectangular prism request to required format
+	/// </summary>
 	public static class RectangularPrismRequestMapper
 	{
 		public static ServiceBusMessage ToServiceBusMessage(this RectangularPrismRequest rectangularPrismRequest) => new ServiceBusMessage(JsonSerializer.Serialize(rectangularPrismRequest))
