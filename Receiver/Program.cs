@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Services.Contracts;
-using Services.Data;
 using Services.Models;
 using Services.Services;
+using Services.View;
 using Utils;
 
 namespace Receiver
@@ -15,23 +15,14 @@ namespace Receiver
 
 		private static void Main()
 		{
-			// Setup console
-			Console.BackgroundColor = ConsoleColor.Black;
-			Console.ForegroundColor = ConsoleColor.White;
-			Console.CursorVisible = false;
-			Console.Title = "Receiver";
+			// Display intro screen and main menu
+			var pickedMainMenuItem = Setup.Run("Receiver");
 
-			// Display main menu
-			Menu<MessageBusType> mainMenu = new Menu<MessageBusType>("Please select message bus receiver type", "Use arrow DOWN and UP to navigate through menu.\nPress ENTER to submit.", true);
-			var pickedMainMenuItem = mainMenu.HandleMenuMovement();
-
-			// Exit was selected
+			// Exit was selected in main menu
 			if (pickedMainMenuItem == null)
 				return;
 
 			MessageBusType = (MessageBusType)pickedMainMenuItem;
-			Console.Clear();
-			Console.Title = $"{MessageBusType.GetMenuDisplayName()} Receiver";
 
 			// Build configuration file
 			var builder = new ConfigurationBuilder()

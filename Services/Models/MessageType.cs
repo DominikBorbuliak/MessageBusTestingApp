@@ -2,6 +2,9 @@
 
 namespace Services.Models
 {
+	/// <summary>
+	/// Enum used to determine which code should be triggered in receiver
+	/// </summary>
 	public enum MessageType
 	{
 		[Description("SimpleMessage")]

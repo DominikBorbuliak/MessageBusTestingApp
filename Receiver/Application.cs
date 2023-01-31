@@ -1,4 +1,5 @@
 ﻿using Services.Contracts;
+using Utils;
 
 namespace Receiver
 {
@@ -21,7 +22,23 @@ namespace Receiver
 			{
 				await _receiverService.StartJob();
 
-				Console.WriteLine("Press any key to exit application and stop processing!");
+				ConsoleKey key;
+				do
+				{
+					Console.WriteLine("Press ESC to exit application or C to clear the console!");
+					key = Console.ReadKey(true).Key;
+
+					if (key == ConsoleKey.C)
+						Console.Clear();
+
+				} while (key != ConsoleKey.Escape);
+			}
+			catch
+			{
+				ConsoleUtils.WriteLineColor($"Error occured. Please read the readme file, to check if you have everything setup correctly.", ConsoleColor.Red);
+				ConsoleUtils.WriteLineColor($"Feel free to contact administrator via email '514127@mail.muni.cz' if the problem persists.", ConsoleColor.Red);
+				Console.WriteLine();
+				ConsoleUtils.WriteLineColor($"Press anything to exit application...", ConsoleColor.Red);
 				Console.ReadKey();
 			}
 			finally

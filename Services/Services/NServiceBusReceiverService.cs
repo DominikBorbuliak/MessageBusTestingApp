@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Services.Contracts;
 using Services.Models;
-using System.Text.Json;
 using Utils;
 
 namespace Services.Services
@@ -48,19 +47,25 @@ namespace Services.Services
 		{
 			_sendOnlyEndpointConfiguration.ExecuteTheseHandlersFirst(typeof(NServiceBusSimpleMessageHandler));
 			_sendOnlyEndpointConfiguration.ExecuteTheseHandlersFirst(typeof(NServiceBusAdvancedMessageHandler));
-			_sendAndReplyEndpointConfiguration.ExecuteTheseHandlersFirst(typeof(NServiceBusRectangularPrismRequestHandler));
 
 			_sendOnlyEndpointInstance = await Endpoint.Start(_sendOnlyEndpointConfiguration);
+
+			_sendAndReplyEndpointConfiguration.ExecuteTheseHandlersFirst(typeof(NServiceBusRectangularPrismRequestHandler));
+
 			_sendAndReplyEndpointInstance = await Endpoint.Start(_sendAndReplyEndpointConfiguration);
 		}
 
 		public async Task FinishJob()
 		{
 			await _sendOnlyEndpointInstance.Stop();
+
 			await _sendAndReplyEndpointInstance.Stop();
 		}
 	}
 
+	/// <summary>
+	/// Handler class for simple message
+	/// </summary>
 	public class NServiceBusSimpleMessageHandler : IHandleMessages<SimpleMessage>
 	{
 		public async Task Handle(SimpleMessage message, IMessageHandlerContext context)
@@ -72,6 +77,9 @@ namespace Services.Services
 		}
 	}
 
+	/// <summary>
+	/// Handler class for advanced message
+	/// </summary>
 	public class NServiceBusAdvancedMessageHandler : IHandleMessages<AdvancedMessage>
 	{
 		public async Task Handle(AdvancedMessage message, IMessageHandlerContext context)
@@ -83,14 +91,14 @@ namespace Services.Services
 		}
 	}
 
+	/// <summary>
+	/// Handler class for rectangular prism request
+	/// </summary>
 	public class NServiceBusRectangularPrismRequestHandler : IHandleMessages<RectangularPrismRequest>
 	{
 		public async Task Handle(RectangularPrismRequest rectangularPrismRequest, IMessageHandlerContext context)
 		{
-			await Task.Run(() =>
-			{
-				ConsoleUtils.WriteLineColor($"Rectangular prism request received:\n{rectangularPrismRequest}", ConsoleColor.Green);
-			}, context.CancellationToken);
+			ConsoleUtils.WriteLineColor($"Rectangular prism request received:\n{rectangularPrismRequest}", ConsoleColor.Green);
 
 			var rectangularPrismResponse = new RectangularPrismResponse
 			{
@@ -102,22 +110,25 @@ namespace Services.Services
 
 			await context.Reply(rectangularPrismResponse);
 		}
+	}
 
-		public class NServiceBusProcessTimeoutRequestHandler : IHandleMessages<ProcessTimeoutRequest>
+	/// <summary>
+	/// Handler class for process timeout request
+	/// </summary>
+	public class NServiceBusProcessTimeoutRequestHandler : IHandleMessages<ProcessTimeoutRequest>
+	{
+		public async Task Handle(ProcessTimeoutRequest processTimeoutRequest, IMessageHandlerContext context)
 		{
-			public async Task Handle(ProcessTimeoutRequest processTimeoutRequest, IMessageHandlerContext context)
+			ConsoleUtils.WriteLineColor($"Received process timeout request: {processTimeoutRequest.ProcessName}. Waiting for: {processTimeoutRequest.MillisecondsTimeout}ms", ConsoleColor.Green);
+			await Task.Delay(processTimeoutRequest.MillisecondsTimeout, context.CancellationToken);
+			ConsoleUtils.WriteLineColor($"Sending process timeout response: {processTimeoutRequest.ProcessName}", ConsoleColor.Green);
+
+			var processTimeoutResponse = new ProcessTimeoutResponse
 			{
-				ConsoleUtils.WriteLineColor($"Received process timeout request: {processTimeoutRequest.ProcessName}. Waiting for: {processTimeoutRequest.MillisecondsTimeout}ms", ConsoleColor.Green);
-				await Task.Delay(processTimeoutRequest.MillisecondsTimeout, context.CancellationToken);
-				ConsoleUtils.WriteLineColor($"Sending process timeout response: {processTimeoutRequest.ProcessName}", ConsoleColor.Green);
+				ProcessName = processTimeoutRequest.ProcessName
+			};
 
-				var processTimeoutResponse = new ProcessTimeoutResponse
-				{
-					ProcessName = processTimeoutRequest.ProcessName
-				};
-
-				await context.Reply(processTimeoutResponse);
-			}
+			await context.Reply(processTimeoutResponse);
 		}
 	}
 }

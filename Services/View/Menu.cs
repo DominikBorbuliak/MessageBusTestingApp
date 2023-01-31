@@ -1,6 +1,6 @@
 ﻿using Utils;
 
-namespace Services.Data
+namespace Services.View
 {
     /// <summary>
     /// Class that displays menu based on enum
@@ -83,7 +83,6 @@ namespace Services.Data
                 {
                     _selectedItemId = (_selectedItemId + 1) % _menuItems.Count;
                 }
-
             } while (key != ConsoleKey.Enter);
 
             return EnumUtils.GetValueFromMenuDisplayName<E>(_menuItems[_selectedItemId]);

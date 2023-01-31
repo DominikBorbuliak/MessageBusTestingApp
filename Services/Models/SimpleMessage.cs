@@ -12,6 +12,9 @@ namespace Services.Models
 		public string Text { get; set; } = string.Empty;
 	}
 
+	/// <summary>
+	/// Mapper class to format simple message to required format
+	/// </summary>
 	public static class SimpleMessageMapper
 	{
 		public static ServiceBusMessage ToServiceBusMessage(this SimpleMessage simpleMessage) => new ServiceBusMessage(simpleMessage.Text)

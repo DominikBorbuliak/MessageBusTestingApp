@@ -22,7 +22,7 @@ namespace Sender
 		{
 			try
 			{
-				Menu<ActionType> actionMenu = new Menu<ActionType>("Please select action type.", "Use arrow DOWN and UP to navigate through menu.\nPress ENTER to submit.", true);
+				var actionMenu = new Menu<ActionType>("Please select action type.", "Use arrow DOWN and UP to navigate through menu.\nPress ENTER to submit.", true);
 				ActionType? pickedActionMenuItem;
 
 				while ((pickedActionMenuItem = actionMenu.HandleMenuMovement()) != null)
@@ -56,9 +56,12 @@ namespace Sender
 					Thread.Sleep(5000);
 				}
 			}
-			catch (Exception ex)
+			catch
 			{
-				ConsoleUtils.WriteLineColor($"Error occured. Press anything to exit application.", ConsoleColor.Red);
+				ConsoleUtils.WriteLineColor($"Error occured. Please read the readme file, to check if you have everything setup correctly.", ConsoleColor.Red);
+				ConsoleUtils.WriteLineColor($"Feel free to contact administrator via email '514127@mail.muni.cz' if the problem persists.", ConsoleColor.Red);
+				Console.WriteLine();
+				ConsoleUtils.WriteLineColor($"Press anything to exit application...", ConsoleColor.Red);
 				Console.ReadKey();
 			}
 			finally
@@ -137,6 +140,10 @@ namespace Sender
 				await _senderService.SendAdvancedMessage(randomMessage);
 		}
 
+		/// <summary>
+		/// Semds one message that requires response
+		/// </summary>
+		/// <returns></returns>
 		private async Task HandleSendAndReplyRectangularPrism()
 		{
 			var rectangularPrismRequest = new RectangularPrismRequest
@@ -149,30 +156,25 @@ namespace Sender
 			await _senderService.SendAndReplyRectangularPrism(rectangularPrismRequest);
 		}
 
+		/// <summary>
+		/// Simulates N concurent clients
+		/// </summary>
+		/// <returns></returns>
 		private async Task HandleSendAndReplySimulateNClients()
 		{
 			var n = ConsoleUtils.GetUserIntegerInput("Please enter the number of clients you want to simulate:");
-			var names = new List<string>();
-			var timeouts = new List<int>();
 
+			var processTimeoutRequests = new List<ProcessTimeoutRequest>();
+
+			// Requests must be created separately, as it takes some time to fill in the required information, so the simulation would not be accurate.
 			for (var i = 0; i < n; i++)
-			{
-				names.Add(ConsoleUtils.GetUserTextInput("Please insert the name of process:"));
-				timeouts.Add(ConsoleUtils.GetUserIntegerInput("Please insert the timeout for process in miliseconds:"));
-			}
-
-			var tasks = new List<Task>();
-
-			for (var i = 0; i < n; i++)
-			{
-				tasks.Add(_senderService.SendAndReplyProcessTimeout(new ProcessTimeoutRequest
+				processTimeoutRequests.Add(new ProcessTimeoutRequest
 				{
-					ProcessName = names[i],
-					MillisecondsTimeout = timeouts[i]
-				}));
-			}
+					ProcessName = ConsoleUtils.GetUserTextInput("Please insert the name of client:"),
+					MillisecondsTimeout = ConsoleUtils.GetUserIntegerInput("Please insert the timeout in miliseconds to simulate work:")
+				});
 
-			await Task.WhenAll(tasks);
+			await Task.WhenAll(processTimeoutRequests.Select(processTimeoutRequest => _senderService.SendAndReplyProcessTimeout(processTimeoutRequest)));
 		}
 	}
 }

@@ -1,5 +1,4 @@
-﻿using Azure;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Services.Contracts;
 using Services.Models;
 using Utils;
@@ -53,33 +52,26 @@ namespace Services.Services
 			_sendAndReplyEndpointInstance = Endpoint.Start(sendAndReplyEndpointConfiguration).Result;
 		}
 
-		public async Task SendSimpleMessage(SimpleMessage simpleMessage)
-		{
-			await _sendOnlyEndpointInstance.Send(simpleMessage);
-		}
+		public async Task SendSimpleMessage(SimpleMessage simpleMessage) => await _sendOnlyEndpointInstance.Send(simpleMessage);
 
-		public async Task SendAdvancedMessage(AdvancedMessage advancedMessage)
-		{
-			await _sendOnlyEndpointInstance.Send(advancedMessage);
-		}
 
-		public async Task SendAndReplyRectangularPrism(RectangularPrismRequest rectangularPrismRequest)
-		{
-			await _sendAndReplyEndpointInstance.Send(rectangularPrismRequest);
-		}
+		public async Task SendAdvancedMessage(AdvancedMessage advancedMessage) => await _sendOnlyEndpointInstance.Send(advancedMessage);
 
-		public async Task SendAndReplyProcessTimeout(ProcessTimeoutRequest processTimeoutRequest)
-		{
-			await _sendAndReplyEndpointInstance.Send(processTimeoutRequest);
-		}
+		public async Task SendAndReplyRectangularPrism(RectangularPrismRequest rectangularPrismRequest) => await _sendAndReplyEndpointInstance.Send(rectangularPrismRequest);
+
+		public async Task SendAndReplyProcessTimeout(ProcessTimeoutRequest processTimeoutRequest) => await _sendAndReplyEndpointInstance.Send(processTimeoutRequest);
 
 		public async Task FinishJob()
 		{
 			await _sendOnlyEndpointInstance.Stop();
+
 			await _sendAndReplyEndpointInstance.Stop();
 		}
 	}
 
+	/// <summary>
+	/// Handler class for rectangular prism response
+	/// </summary>
 	public class NServiceBusRectangularPrismResponseHandler : IHandleMessages<RectangularPrismResponse>
 	{
 		public async Task Handle(RectangularPrismResponse message, IMessageHandlerContext context)
@@ -91,6 +83,9 @@ namespace Services.Services
 		}
 	}
 
+	/// <summary>
+	/// Handler class for process timeout response
+	/// </summary>
 	public class NServiceBusProcessTimeoutResponseHandler : IHandleMessages<ProcessTimeoutResponse>
 	{
 		public async Task Handle(ProcessTimeoutResponse message, IMessageHandlerContext context)
