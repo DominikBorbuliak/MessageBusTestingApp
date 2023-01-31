@@ -14,16 +14,18 @@ namespace Services.Services
 		private readonly IConnection _connection;
 
 		private readonly IModel _sendOnlyChannel;
-		private readonly EventingBasicConsumer _sendOnlyConsumer;
+		private readonly AsyncEventingBasicConsumer _sendOnlyConsumer;
 
 		private readonly IModel _sendAndReplyChannel;
-		private readonly EventingBasicConsumer _sendAndReplyConsumer;
+		private readonly AsyncEventingBasicConsumer _sendAndReplyConsumer;
 
 		public RabbitMQReceiverService(IConfiguration configuration)
 		{
 			var connectionFactory = new ConnectionFactory
 			{
-				HostName = configuration.GetSection("ConnectionSettings")["HostName"]
+				HostName = configuration.GetSection("ConnectionSettings")["HostName"],
+				DispatchConsumersAsync = true,
+				ConsumerDispatchConcurrency = 3
 			};
 
 			_connection = connectionFactory.CreateConnection();
@@ -37,7 +39,7 @@ namespace Services.Services
 				arguments: null
 			);
 
-			_sendOnlyConsumer = new EventingBasicConsumer(_sendOnlyChannel);
+			_sendOnlyConsumer = new AsyncEventingBasicConsumer(_sendOnlyChannel);
 
 			_sendAndReplyChannel = _connection.CreateModel();
 
@@ -49,8 +51,8 @@ namespace Services.Services
 				arguments: null
 			);
 
-			_sendAndReplyChannel.BasicQos(0, 1, false);
-			_sendAndReplyConsumer = new EventingBasicConsumer(_sendAndReplyChannel);
+			_sendAndReplyChannel.BasicQos(0, 3, false);
+			_sendAndReplyConsumer = new AsyncEventingBasicConsumer(_sendAndReplyChannel);
 		}
 
 		public async Task StartJob()
@@ -88,7 +90,7 @@ namespace Services.Services
 			});
 		}
 
-		private void MessageHandler(BasicDeliverEventArgs arguments)
+		private async Task MessageHandler(BasicDeliverEventArgs arguments)
 		{
 			var body = Encoding.UTF8.GetString(arguments.Body.ToArray());
 
@@ -103,7 +105,7 @@ namespace Services.Services
 			}
 		}
 
-		private void RequestHandler(BasicDeliverEventArgs arguments)
+		private async Task RequestHandler(BasicDeliverEventArgs arguments)
 		{
 			var body = Encoding.UTF8.GetString(arguments.Body.ToArray());
 
@@ -136,7 +138,7 @@ namespace Services.Services
 				var processTimeoutRequest = JsonSerializer.Deserialize<ProcessTimeoutRequest>(body);
 
 				ConsoleUtils.WriteLineColor($"Received process timeout request: {processTimeoutRequest.ProcessName}. Waiting for: {processTimeoutRequest.MillisecondsTimeout}ms", ConsoleColor.Green);
-				Task.Delay(processTimeoutRequest.MillisecondsTimeout).Wait();
+				await Task.Delay(processTimeoutRequest.MillisecondsTimeout);
 				ConsoleUtils.WriteLineColor($"Sending process timeout response: {processTimeoutRequest.ProcessName}", ConsoleColor.Green);
 
 				var processTimeoutResponse = new ProcessTimeoutResponse
