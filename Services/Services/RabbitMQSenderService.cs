@@ -92,6 +92,11 @@ namespace Services.Services
 			});
 		}
 
+		public async Task SendExceptionMessage(ExceptionMessage exceptionMessage)
+		{
+
+		}
+
 		public async Task SendAndReplyRectangularPrism(RectangularPrismRequest rectangularPrismRequest)
 		{
 			await Task.Run(() =>

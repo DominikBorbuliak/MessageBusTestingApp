@@ -57,6 +57,11 @@ namespace Services.Services
 
 		public async Task SendAdvancedMessage(AdvancedMessage advancedMessage) => await _sendOnlyEndpointInstance.Send(advancedMessage);
 
+		public async Task SendExceptionMessage(ExceptionMessage exceptionMessage)
+		{
+
+		}
+
 		public async Task SendAndReplyRectangularPrism(RectangularPrismRequest rectangularPrismRequest) => await _sendAndReplyEndpointInstance.Send(rectangularPrismRequest);
 
 		public async Task SendAndReplyProcessTimeout(ProcessTimeoutRequest processTimeoutRequest) => await _sendAndReplyEndpointInstance.Send(processTimeoutRequest);
