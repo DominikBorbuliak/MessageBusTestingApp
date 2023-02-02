@@ -73,6 +73,24 @@ namespace Services.Services
 				var advancedMessage = JsonSerializer.Deserialize<AdvancedMessage>(body);
 				ConsoleUtils.WriteLineColor($"Advanced messsage received:\n{advancedMessage}", ConsoleColor.Green);
 			}
+			else if (arguments.Message.Subject.Equals(MessageType.ExceptionMessage.GetDescription()))
+			{
+				var exceptionMessage = JsonSerializer.Deserialize<ExceptionMessage>(body);
+
+				if (exceptionMessage == null)
+				{
+					ConsoleUtils.WriteLineColor("No message found for: ExceptionMessage!", ConsoleColor.Red);
+					return;
+				}
+
+				if (arguments.Message.DeliveryCount < exceptionMessage.SucceedOn)
+				{
+					ConsoleUtils.WriteLineColor($"Throwing exception with text: {exceptionMessage.ExceptionText}", ConsoleColor.Yellow);
+					throw new Exception(exceptionMessage.ExceptionText);
+				}
+
+				ConsoleUtils.WriteLineColor($"Exception messsage with text: {exceptionMessage.ExceptionText} succeeded!", ConsoleColor.Green);
+			}
 
 			await arguments.CompleteMessageAsync(arguments.Message);
 		}
@@ -143,7 +161,7 @@ namespace Services.Services
 		{
 			await Task.Run(() =>
 			{
-				ConsoleUtils.WriteLineColor($"Exception occured: {args.Exception}", ConsoleColor.Red);
+				ConsoleUtils.WriteLineColor($"Exception occured: {args.Exception.Message}", ConsoleColor.Red);
 			});
 		}
 	}

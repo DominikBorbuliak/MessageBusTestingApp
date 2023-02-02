@@ -1,4 +1,8 @@
 ﻿using Microsoft.Extensions.Configuration;
+using NLog.Extensions.Logging;
+using NServiceBus.Extensions.Logging;
+using NServiceBus.Logging;
+using NServiceBus.Transport;
 using Services.Contracts;
 using Services.Models;
 using Utils;
@@ -15,6 +19,9 @@ namespace Services.Services
 
 		public NServiceBusReceiverService(IConfiguration configuration, bool isAzureServiceBus)
 		{
+			// Disable automatic NServiceBus logging
+			LogManager.UseFactory(new ExtensionsLoggerFactory(new NLogLoggerFactory()));
+
 			_sendOnlyEndpointConfiguration = new EndpointConfiguration(configuration.GetSection("ConnectionSettings")["SendOnlyReceiverEndpointName"]);
 			_sendAndReplyEndpointConfiguration = new EndpointConfiguration(configuration.GetSection("ConnectionSettings")["SendAndReplyReceiverEndpointName"]);
 
@@ -39,6 +46,9 @@ namespace Services.Services
 				sendAndReplyTransport.ConnectionString($"host={configuration.GetSection("ConnectionSettings")["HostName"]}");
 			}
 
+			var recoverability = _sendOnlyEndpointConfiguration.Recoverability();
+			recoverability.CustomPolicy(ErrorHandler);
+
 			_sendOnlyEndpointConfiguration.EnableInstallers();
 			_sendAndReplyEndpointConfiguration.EnableInstallers();
 		}
@@ -60,6 +70,13 @@ namespace Services.Services
 			await _sendOnlyEndpointInstance.Stop();
 
 			await _sendAndReplyEndpointInstance.Stop();
+		}
+
+		private RecoverabilityAction ErrorHandler(RecoverabilityConfig config, ErrorContext context)
+		{
+			ConsoleUtils.WriteLineColor($"Exception occured: {context.Exception.Message}", ConsoleColor.Red);
+
+			return RecoverabilityAction.ImmediateRetry();
 		}
 	}
 
@@ -87,6 +104,38 @@ namespace Services.Services
 			await Task.Run(() =>
 			{
 				ConsoleUtils.WriteLineColor($"Advanced messsage received: {message}", ConsoleColor.Green);
+			}, context.CancellationToken);
+		}
+	}
+
+	/// <summary>
+	/// Handler class for exception message
+	/// </summary>
+	public class NServiceBusExceptionMessageHandler : IHandleMessages<ExceptionMessage>
+	{
+		// IMessageHandlerContext does not include delivery count property so we replace it with this property
+		// Property must be static as NServiceBus creates a new instance for each message handle attempt
+		private static IDictionary<string, int> _deliveryCounts = new Dictionary<string, int>();
+
+		public async Task Handle(ExceptionMessage message, IMessageHandlerContext context)
+		{
+			await Task.Run(() =>
+			{
+				if (!_deliveryCounts.ContainsKey(context.MessageId))
+					_deliveryCounts.Add(context.MessageId, 1);
+
+				var deliveryCount = _deliveryCounts[context.MessageId];
+
+				if (deliveryCount < message.SucceedOn)
+				{
+					ConsoleUtils.WriteLineColor($"Throwing exception with text: {message.ExceptionText}", ConsoleColor.Yellow);
+
+					_deliveryCounts[context.MessageId] += 1;
+
+					throw new Exception(message.ExceptionText);
+				}
+
+				ConsoleUtils.WriteLineColor($"Exception messsage with text: {message.ExceptionText} succeeded!", ConsoleColor.Green);
 			}, context.CancellationToken);
 		}
 	}

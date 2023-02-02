@@ -51,6 +51,9 @@ namespace Sender
 						case ActionType.SendAndReplySimulateNClients:
 							await HandleSendAndReplySimulateNClients();
 							break;
+						case ActionType.SendOnlySimulateException:
+							await HandleSendOnlySimulateException();
+							break;
 					}
 
 					ConsoleUtils.WriteLineColor("Message was successfully send to queue!", ConsoleColor.Green);
@@ -176,6 +179,21 @@ namespace Sender
 				});
 
 			await Task.WhenAll(processTimeoutRequests.Select(processTimeoutRequest => _senderService.SendAndReplyProcessTimeout(processTimeoutRequest)));
+		}
+
+		/// <summary>
+		/// Simulates exception on receiver end
+		/// </summary>
+		/// <returns></returns>
+		private async Task HandleSendOnlySimulateException()
+		{
+			var exceptionMessage = new ExceptionMessage
+			{
+				SucceedOn = ConsoleUtils.GetUserIntegerInput("Please insert the number (1 is first try) of request on which it will succeed:"),
+				ExceptionText = ConsoleUtils.GetUserTextInput("Please insert the text of the exception:")
+			};
+
+			await _senderService.SendExceptionMessage(exceptionMessage);
 		}
 	}
 }

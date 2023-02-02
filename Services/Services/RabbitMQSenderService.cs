@@ -92,11 +92,28 @@ namespace Services.Services
 			});
 		}
 
-		public async Task SendAndReplyRectangularPrism(RectangularPrismRequest rectangularPrismRequest)
+		public async Task SendExceptionMessage(ExceptionMessage exceptionMessage)
 		{
 			await Task.Run(() =>
 			{
 				var props = _sendOnlyChannel.CreateBasicProperties();
+				props.Type = MessageType.ExceptionMessage.GetDescription();
+				props.MessageId = Guid.NewGuid().ToString();
+
+				_sendOnlyChannel.BasicPublish(
+					exchange: "",
+					routingKey: "nativesendonlyreceiver",
+					basicProperties: props,
+					body: exceptionMessage.ToRabbitMQMessage()
+				);
+			});
+		}
+
+		public async Task SendAndReplyRectangularPrism(RectangularPrismRequest rectangularPrismRequest)
+		{
+			await Task.Run(() =>
+			{
+				var props = _sendAndReplyChannel.CreateBasicProperties();
 				var correlationId = Guid.NewGuid().ToString();
 
 				props.Type = MessageType.RectangularPrismRequest.GetDescription();
@@ -116,7 +133,7 @@ namespace Services.Services
 		{
 			await Task.Run(() =>
 			{
-				var props = _sendOnlyChannel.CreateBasicProperties();
+				var props = _sendAndReplyChannel.CreateBasicProperties();
 				var correlationId = Guid.NewGuid().ToString();
 
 				props.Type = MessageType.ProcessTimeoutRequest.GetDescription();

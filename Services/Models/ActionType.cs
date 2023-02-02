@@ -19,6 +19,9 @@ namespace Services.Models
 		[MenuDisplayName("Send Only - N Random Messages - Advanced")]
 		SendOnlyNRandomAdvancedMessages,
 
+		[MenuDisplayName("Send Only - Simulate Exception")]
+		SendOnlySimulateException,
+
 		[MenuDisplayName("Send & Reply - Surface area and Volume of Rectangular Prism")]
 		SendAndReplyRectangularPrism,
 

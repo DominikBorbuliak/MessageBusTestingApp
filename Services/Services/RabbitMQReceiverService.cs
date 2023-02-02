@@ -19,8 +19,12 @@ namespace Services.Services
 		private readonly IModel _sendAndReplyChannel;
 		private readonly AsyncEventingBasicConsumer _sendAndReplyConsumer;
 
+		private IDictionary<string, int> _deliveryCounts;
+
 		public RabbitMQReceiverService(IConfiguration configuration)
 		{
+			_deliveryCounts = new Dictionary<string, int>();
+
 			var connectionFactory = new ConnectionFactory
 			{
 				HostName = configuration.GetSection("ConnectionSettings")["HostName"],
@@ -29,6 +33,7 @@ namespace Services.Services
 			};
 
 			_connection = connectionFactory.CreateConnection();
+
 			_sendOnlyChannel = _connection.CreateModel();
 
 			_sendOnlyChannel.QueueDeclare(
@@ -63,7 +68,7 @@ namespace Services.Services
 
 				_sendOnlyChannel.BasicConsume(
 					queue: "nativesendonlyreceiver",
-					autoAck: true,
+					autoAck: false,
 					consumer: _sendOnlyConsumer
 				);
 
@@ -109,6 +114,45 @@ namespace Services.Services
 				{
 					var advancedMessage = JsonSerializer.Deserialize<AdvancedMessage>(body);
 					ConsoleUtils.WriteLineColor($"Advanced messsage received:\n{advancedMessage}", ConsoleColor.Green);
+				}
+				else if (arguments.BasicProperties.Type.Equals(MessageType.ExceptionMessage.GetDescription()))
+				{
+					try
+					{
+						var exceptionMessage = JsonSerializer.Deserialize<ExceptionMessage>(body);
+
+						if (exceptionMessage == null)
+						{
+							ConsoleUtils.WriteLineColor("No message found for: ExceptionMessage!", ConsoleColor.Red);
+							return;
+						}
+
+						if (!_deliveryCounts.ContainsKey(arguments.BasicProperties.MessageId))
+							_deliveryCounts.Add(arguments.BasicProperties.MessageId, 1);
+
+						var deliveryCount = _deliveryCounts[arguments.BasicProperties.MessageId];
+
+						if (deliveryCount < exceptionMessage.SucceedOn)
+						{
+							ConsoleUtils.WriteLineColor($"Throwing exception with text: {exceptionMessage.ExceptionText}", ConsoleColor.Yellow);
+
+							_deliveryCounts[arguments.BasicProperties.MessageId] += 1;
+
+							throw new Exception(exceptionMessage.ExceptionText);
+						}
+
+						ConsoleUtils.WriteLineColor($"Exception messsage with text: {exceptionMessage.ExceptionText} succeeded!", ConsoleColor.Green);
+
+						_sendOnlyChannel.BasicAck(
+							deliveryTag: arguments.DeliveryTag,
+							multiple: false
+						);
+					}
+					catch (Exception exception)
+					{
+						ConsoleUtils.WriteLineColor($"Exception occured: {exception.Message}", ConsoleColor.Red);
+						_sendOnlyChannel.BasicNack(arguments.DeliveryTag, false, true);
+					}
 				}
 			});
 		}

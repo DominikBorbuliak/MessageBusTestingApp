@@ -19,6 +19,13 @@ namespace Services.Contracts
 		Task SendAdvancedMessage(AdvancedMessage advancedMessage);
 
 		/// <summary>
+		/// Sends exception message to simulate exception thrown during processing
+		/// </summary>
+		/// <param name="exceptionMessage"></param>
+		/// <returns></returns>
+		Task SendExceptionMessage(ExceptionMessage exceptionMessage);
+
+		/// <summary>
 		/// Sends rectangular prism request and waits for response
 		/// </summary>
 		/// <param name="rectangularPrismRequest"></param>

@@ -43,6 +43,11 @@ namespace Services.Services
 			await _sendOnlyServiceBusSender.SendMessageAsync(advancedMessage.ToServiceBusMessage());
 		}
 
+		public async Task SendExceptionMessage(ExceptionMessage exceptionMessage)
+		{
+			await _sendOnlyServiceBusSender.SendMessageAsync(exceptionMessage.ToServiceBusMessage());
+		}
+
 		public async Task SendAndReplyRectangularPrism(RectangularPrismRequest rectangularPrismRequest)
 		{
 			var serviceBusMessage = rectangularPrismRequest.ToServiceBusMessage();

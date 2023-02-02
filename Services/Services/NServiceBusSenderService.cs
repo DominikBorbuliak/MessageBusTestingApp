@@ -1,4 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
+using NLog.Extensions.Logging;
+using NServiceBus.Extensions.Logging;
+using NServiceBus.Logging;
 using Services.Contracts;
 using Services.Models;
 using Utils;
@@ -12,6 +15,9 @@ namespace Services.Services
 
 		public NServiceBusSenderService(IConfiguration configuration, bool isAzureServiceBus)
 		{
+			// Disable automatic NServiceBus logging
+			LogManager.UseFactory(new ExtensionsLoggerFactory(new NLogLoggerFactory()));
+
 			var sendOnlyEndpointConfiguration = new EndpointConfiguration(configuration.GetSection("ConnectionSettings")["SendOnlySenderEndpointName"]);
 			var sendAndReplyEndpointConfiguration = new EndpointConfiguration(configuration.GetSection("ConnectionSettings")["SendAndReplySenderEndpointName"]);
 
@@ -21,6 +27,7 @@ namespace Services.Services
 				sendOnlyTransport.ConnectionString(configuration.GetConnectionString("AzureServiceBus"));
 				sendOnlyTransport.Routing().RouteToEndpoint(typeof(SimpleMessage), configuration.GetSection("ConnectionSettings")["SendOnlyReceiverEndpointName"]);
 				sendOnlyTransport.Routing().RouteToEndpoint(typeof(AdvancedMessage), configuration.GetSection("ConnectionSettings")["SendOnlyReceiverEndpointName"]);
+				sendOnlyTransport.Routing().RouteToEndpoint(typeof(ExceptionMessage), configuration.GetSection("ConnectionSettings")["SendOnlyReceiverEndpointName"]);
 				sendOnlyTransport.TopicName(configuration.GetSection("ConnectionSettings")["TopicName"]);
 				sendOnlyEndpointConfiguration.SendOnly();
 
@@ -37,6 +44,7 @@ namespace Services.Services
 				sendOnlyTransport.ConnectionString($"host={configuration.GetSection("ConnectionSettings")["HostName"]}");
 				sendOnlyTransport.Routing().RouteToEndpoint(typeof(SimpleMessage), configuration.GetSection("ConnectionSettings")["SendOnlyReceiverEndpointName"]);
 				sendOnlyTransport.Routing().RouteToEndpoint(typeof(AdvancedMessage), configuration.GetSection("ConnectionSettings")["SendOnlyReceiverEndpointName"]);
+				sendOnlyTransport.Routing().RouteToEndpoint(typeof(ExceptionMessage), configuration.GetSection("ConnectionSettings")["SendOnlyReceiverEndpointName"]);
 
 				var sendAndReplyTransport = sendAndReplyEndpointConfiguration.UseTransport<RabbitMQTransport>();
 				sendAndReplyTransport.UseConventionalRoutingTopology(QueueType.Quorum);
@@ -56,6 +64,8 @@ namespace Services.Services
 
 
 		public async Task SendAdvancedMessage(AdvancedMessage advancedMessage) => await _sendOnlyEndpointInstance.Send(advancedMessage);
+
+		public async Task SendExceptionMessage(ExceptionMessage exceptionMessage) => await _sendOnlyEndpointInstance.Send(exceptionMessage);
 
 		public async Task SendAndReplyRectangularPrism(RectangularPrismRequest rectangularPrismRequest) => await _sendAndReplyEndpointInstance.Send(rectangularPrismRequest);
 
