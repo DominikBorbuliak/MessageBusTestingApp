@@ -119,6 +119,7 @@ namespace Services.Services
 				props.Type = MessageType.RectangularPrismRequest.GetDescription();
 				props.CorrelationId = correlationId;
 				props.ReplyTo = _configuration.GetSection("ConnectionSettings")["SendAndReplySenderQueueName"];
+				props.MessageId = Guid.NewGuid().ToString();
 
 				_sendAndReplyChannel.BasicPublish(
 					exchange: "",
@@ -184,6 +185,12 @@ namespace Services.Services
 					ConsoleUtils.WriteLineColor($"Received process timeout response: {response.ProcessName}", ConsoleColor.Green);
 				else
 					ConsoleUtils.WriteLineColor("No response found for: ProcessTimeoutResponse!", ConsoleColor.Red);
+			}
+			else if (arguments.BasicProperties.Type.Equals(MessageType.ExceptionResponse.GetDescription()))
+			{
+				var response = JsonSerializer.Deserialize<ExceptionResponse>(body);
+
+				ConsoleUtils.WriteLineColor(response.Text, ConsoleColor.Red);
 			}
 		}
 	}
