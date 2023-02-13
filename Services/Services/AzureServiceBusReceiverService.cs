@@ -114,6 +114,12 @@ namespace Services.Services
 					return;
 				}
 
+				if (rectangularPrismRequest.SucceedOn <= 0 || arguments.Message.DeliveryCount < rectangularPrismRequest.SucceedOn)
+				{
+					ConsoleUtils.WriteLineColor($"Throwing exception with text: {rectangularPrismRequest.ExceptionText}", ConsoleColor.Yellow);
+					throw new Exception(rectangularPrismRequest.ExceptionText);
+				}
+
 				ConsoleUtils.WriteLineColor($"Rectangular prism request received:\n{rectangularPrismRequest}", ConsoleColor.Green);
 
 				var rectangularPrismResponse = new RectangularPrismResponse

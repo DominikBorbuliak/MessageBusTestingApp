@@ -106,4 +106,15 @@ namespace Services.Services
 			}, context.CancellationToken);
 		}
 	}
+
+	public class NServiceBusExceptionResponseHandler : IHandleMessages<ExceptionResponse>
+	{
+		public async Task Handle(ExceptionResponse message, IMessageHandlerContext context)
+		{
+			await Task.Run(() =>
+			{
+				ConsoleUtils.WriteLineColor(message.Text, ConsoleColor.Red);
+			}, context.CancellationToken);
+		}
+	}
 }

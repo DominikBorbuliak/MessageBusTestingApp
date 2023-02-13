@@ -49,6 +49,9 @@ namespace Services.Services
 			var recoverability = _sendOnlyEndpointConfiguration.Recoverability();
 			recoverability.CustomPolicy(ErrorHandler);
 
+			var recoverabilitSendAndReply = _sendAndReplyEndpointConfiguration.Recoverability();
+			recoverabilitSendAndReply.CustomPolicy(ErrorHandler);
+
 			_sendOnlyEndpointConfiguration.EnableInstallers();
 			_sendAndReplyEndpointConfiguration.EnableInstallers();
 		}
@@ -145,8 +148,34 @@ namespace Services.Services
 	/// </summary>
 	public class NServiceBusRectangularPrismRequestHandler : IHandleMessages<RectangularPrismRequest>
 	{
+		// IMessageHandlerContext does not include delivery count property so we replace it with this property
+		// Property must be static as NServiceBus creates a new instance for each message handle attempt
+		private static IDictionary<string, int> _deliveryCounts = new Dictionary<string, int>();
+
+		private static int _maxNumberOfDeliveryCounts = 10;
+
 		public async Task Handle(RectangularPrismRequest rectangularPrismRequest, IMessageHandlerContext context)
 		{
+			if (!_deliveryCounts.ContainsKey(context.MessageId))
+				_deliveryCounts.Add(context.MessageId, 1);
+
+			var deliveryCount = _deliveryCounts[context.MessageId];
+
+			if (_maxNumberOfDeliveryCounts <= deliveryCount)
+			{
+				await context.Reply(new ExceptionResponse { Text = "No response found for: RectangularPrismResponse!" });
+				return;
+			}
+
+			if (rectangularPrismRequest.SucceedOn <= 0 || deliveryCount < rectangularPrismRequest.SucceedOn)
+			{
+				ConsoleUtils.WriteLineColor($"Throwing exception with text: {rectangularPrismRequest.ExceptionText}", ConsoleColor.Yellow);
+
+				_deliveryCounts[context.MessageId] += 1;
+
+				throw new Exception(rectangularPrismRequest.ExceptionText);
+			}
+
 			ConsoleUtils.WriteLineColor($"Rectangular prism request received:\n{rectangularPrismRequest}", ConsoleColor.Green);
 
 			var rectangularPrismResponse = new RectangularPrismResponse

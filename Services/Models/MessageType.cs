@@ -26,6 +26,9 @@ namespace Services.Models
 		ProcessTimeoutResponse,
 
 		[Description("ExceptionMessage")]
-		ExceptionMessage
+		ExceptionMessage,
+
+		[Description("ExceptionResponse")]
+		ExceptionResponse
 	}
 }

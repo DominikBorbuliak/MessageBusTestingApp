@@ -20,6 +20,7 @@ namespace Services.Services
 		private readonly AsyncEventingBasicConsumer _sendAndReplyConsumer;
 
 		private IDictionary<string, int> _deliveryCounts;
+		private int _maxNumberOfDeliveryCounts = 10;
 
 		public RabbitMQReceiverService(IConfiguration configuration)
 		{
@@ -168,34 +169,82 @@ namespace Services.Services
 
 			if (arguments.BasicProperties.Type.Equals(MessageType.RectangularPrismRequest.GetDescription()))
 			{
-				var rectangularPrismRequest = JsonSerializer.Deserialize<RectangularPrismRequest>(body);
-
-				if (rectangularPrismRequest == null)
+				try
 				{
-					ConsoleUtils.WriteLineColor("No request found for: RectangularPrismRequest!", ConsoleColor.Red);
-					return;
+					var rectangularPrismRequest = JsonSerializer.Deserialize<RectangularPrismRequest>(body);
+
+					if (rectangularPrismRequest == null)
+					{
+						ConsoleUtils.WriteLineColor("No request found for: RectangularPrismRequest!", ConsoleColor.Red);
+						return;
+					}
+
+					if (!_deliveryCounts.ContainsKey(arguments.BasicProperties.MessageId))
+						_deliveryCounts.Add(arguments.BasicProperties.MessageId, 1);
+
+					var deliveryCount = _deliveryCounts[arguments.BasicProperties.MessageId];
+
+					if (_maxNumberOfDeliveryCounts <= deliveryCount)
+					{
+						var exceptionResponseProps = _sendAndReplyChannel.CreateBasicProperties();
+						exceptionResponseProps.Type = MessageType.ExceptionResponse.GetDescription();
+
+						_sendAndReplyChannel.BasicPublish(
+							exchange: "",
+							routingKey: arguments.BasicProperties.ReplyTo,
+							mandatory: false,
+							basicProperties: exceptionResponseProps,
+							body: Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new ExceptionResponse { Text = "No response found for: RectangularPrismResponse!" }))
+						);
+
+						_sendAndReplyChannel.BasicAck(
+							deliveryTag: arguments.DeliveryTag,
+							multiple: false
+						);
+
+						return;
+					}
+
+					if (rectangularPrismRequest.SucceedOn <= 0 || deliveryCount < rectangularPrismRequest.SucceedOn)
+					{
+						ConsoleUtils.WriteLineColor($"Throwing exception with text: {rectangularPrismRequest.ExceptionText}", ConsoleColor.Yellow);
+
+						_deliveryCounts[arguments.BasicProperties.MessageId] += 1;
+
+						throw new Exception(rectangularPrismRequest.ExceptionText);
+					}
+
+					ConsoleUtils.WriteLineColor($"Rectangular prism request received:\n{rectangularPrismRequest}", ConsoleColor.Green);
+
+					var rectangularPrismResponse = new RectangularPrismResponse
+					{
+						SurfaceArea = 2 * (rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeB + rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeC + rectangularPrismRequest.EdgeB * rectangularPrismRequest.EdgeC),
+						Volume = rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeB * rectangularPrismRequest.EdgeC
+					};
+
+					ConsoleUtils.WriteLineColor("Sending rectangular prism response", ConsoleColor.Green);
+
+					var props = _sendAndReplyChannel.CreateBasicProperties();
+					props.Type = MessageType.RectangularPrismResponse.GetDescription();
+
+					_sendAndReplyChannel.BasicPublish(
+						exchange: "",
+						routingKey: arguments.BasicProperties.ReplyTo,
+						mandatory: false,
+						basicProperties: props,
+						body: rectangularPrismResponse.ToRabbitMQMessage()
+					);
+
+					_sendAndReplyChannel.BasicAck(
+						deliveryTag: arguments.DeliveryTag,
+						multiple: false
+					);
 				}
-
-				ConsoleUtils.WriteLineColor($"Rectangular prism request received:\n{rectangularPrismRequest}", ConsoleColor.Green);
-
-				var rectangularPrismResponse = new RectangularPrismResponse
+				catch (Exception exception)
 				{
-					SurfaceArea = 2 * (rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeB + rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeC + rectangularPrismRequest.EdgeB * rectangularPrismRequest.EdgeC),
-					Volume = rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeB * rectangularPrismRequest.EdgeC
-				};
-
-				ConsoleUtils.WriteLineColor("Sending rectangular prism response", ConsoleColor.Green);
-
-				var props = _sendAndReplyChannel.CreateBasicProperties();
-				props.Type = MessageType.RectangularPrismResponse.GetDescription();
-
-				_sendAndReplyChannel.BasicPublish(
-					exchange: "",
-					routingKey: arguments.BasicProperties.ReplyTo,
-					mandatory: false,
-					basicProperties: props,
-					body: rectangularPrismResponse.ToRabbitMQMessage()
-				);
+					ConsoleUtils.WriteLineColor($"Exception occured: {exception.Message}", ConsoleColor.Red);
+					_sendAndReplyChannel.BasicNack(arguments.DeliveryTag, false, true);
+				}
 			}
 			else if (arguments.BasicProperties.Type.Equals(MessageType.ProcessTimeoutRequest.GetDescription()))
 			{
@@ -226,12 +275,12 @@ namespace Services.Services
 					basicProperties: props,
 					body: processTimeoutResponse.ToRabbitMQMessage()
 				);
-			}
 
-			_sendAndReplyChannel.BasicAck(
-				deliveryTag: arguments.DeliveryTag,
-				multiple: false
-			);
+				_sendAndReplyChannel.BasicAck(
+					deliveryTag: arguments.DeliveryTag,
+					multiple: false
+				);
+			}
 		}
 	}
 }

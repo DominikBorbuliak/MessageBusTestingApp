@@ -55,13 +55,20 @@ namespace Services.Services
 
 			await _sendAndReplyServiceBusSender.SendMessageAsync(serviceBusMessage);
 
-			var responseMessage = await _sendAndReplyServiceBusReceiver.ReceiveMessageAsync();
+			var responseMessage = await _sendAndReplyServiceBusReceiver.ReceiveMessageAsync(TimeSpan.FromSeconds(10));
+
+			if (responseMessage == null)
+			{
+				ConsoleUtils.WriteLineColor("No response found for: RectangularPrismResponse!", ConsoleColor.Red);
+				return;
+			}
+
 			var response = JsonSerializer.Deserialize<RectangularPrismResponse>(responseMessage.Body);
 
 			if (response != null)
 				ConsoleUtils.WriteLineColor(response.ToString(), ConsoleColor.Green);
 			else
-				ConsoleUtils.WriteLineColor("No response found for: RectangularPrismResponse!", ConsoleColor.Red);
+				ConsoleUtils.WriteLineColor("Deserialization error: RectangularPrismResponse!", ConsoleColor.Red);
 		}
 
 		public async Task SendAndReplyProcessTimeout(ProcessTimeoutRequest processTimeoutRequest)
