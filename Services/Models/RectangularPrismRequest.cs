@@ -13,6 +13,8 @@ namespace Services.Models
 		public double EdgeA { get; set; }
 		public double EdgeB { get; set; }
 		public double EdgeC { get; set; }
+		public string ExceptionText { get; set; } = string.Empty;
+		public int SucceedOn { get; set; }
 
 		public override string ToString()
 		{

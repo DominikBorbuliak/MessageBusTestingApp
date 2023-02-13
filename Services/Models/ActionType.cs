@@ -26,6 +26,9 @@ namespace Services.Models
 		SendAndReplyRectangularPrism,
 
 		[MenuDisplayName("Send & Reply - Simulate N Clients")]
-		SendAndReplySimulateNClients
+		SendAndReplySimulateNClients,
+
+		[MenuDisplayName("Send & Reply - Simulate Exception")]
+		SendAndReplySimulateException
 	}
 }

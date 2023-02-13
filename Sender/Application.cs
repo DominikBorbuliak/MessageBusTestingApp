@@ -54,6 +54,9 @@ namespace Sender
 						case ActionType.SendOnlySimulateException:
 							await HandleSendOnlySimulateException();
 							break;
+						case ActionType.SendAndReplySimulateException:
+							await HandleSendAndReplySimulateException();
+							break;
 					}
 
 					ConsoleUtils.WriteLineColor("Message was successfully send to queue!", ConsoleColor.Green);
@@ -154,7 +157,8 @@ namespace Sender
 			{
 				EdgeA = ConsoleUtils.GetUserDoubleInput("Please insert the length of edge A:"),
 				EdgeB = ConsoleUtils.GetUserDoubleInput("Please insert the length of edge B:"),
-				EdgeC = ConsoleUtils.GetUserDoubleInput("Please insert the length of edge C:")
+				EdgeC = ConsoleUtils.GetUserDoubleInput("Please insert the length of edge C:"),
+				SucceedOn = 1
 			};
 
 			await _senderService.SendAndReplyRectangularPrism(rectangularPrismRequest);
@@ -194,6 +198,20 @@ namespace Sender
 			};
 
 			await _senderService.SendExceptionMessage(exceptionMessage);
+		}
+
+		private async Task HandleSendAndReplySimulateException()
+		{
+			var rectangularPrismRequest = new RectangularPrismRequest
+			{
+				EdgeA = ConsoleUtils.GetUserDoubleInput("Please insert the length of edge A:"),
+				EdgeB = ConsoleUtils.GetUserDoubleInput("Please insert the length of edge B:"),
+				EdgeC = ConsoleUtils.GetUserDoubleInput("Please insert the length of edge C:"),
+				SucceedOn = ConsoleUtils.GetUserIntegerInput("Please insert the number (1 is first try, 0 or less to never succed) of request on which it will succeed:"),
+				ExceptionText = ConsoleUtils.GetUserTextInput("Please insert the text of the exception:")
+			};
+
+			await _senderService.SendAndReplyRectangularPrism(rectangularPrismRequest);
 		}
 	}
 }
