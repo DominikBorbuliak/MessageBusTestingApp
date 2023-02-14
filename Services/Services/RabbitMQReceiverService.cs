@@ -237,20 +237,9 @@ namespace Services.Services
 			{
 				var processTimeoutRequest = JsonSerializer.Deserialize<ProcessTimeoutRequest>(body);
 
-				if (processTimeoutRequest == null)
-				{
-					ConsoleUtils.WriteLineColor("No request found for: ProcessTimeoutRequest!", ConsoleColor.Red);
+				var processTimeoutResponse = await ProcessTimeoutRequestHandler.HandleAndGenerateResponse(processTimeoutRequest);
+				if (processTimeoutResponse == null)
 					return;
-				}
-
-				ConsoleUtils.WriteLineColor($"Received process timeout request: {processTimeoutRequest.ProcessName}. Waiting for: {processTimeoutRequest.MillisecondsTimeout}ms", ConsoleColor.Green);
-				await Task.Delay(processTimeoutRequest.MillisecondsTimeout);
-				ConsoleUtils.WriteLineColor($"Sending process timeout response: {processTimeoutRequest.ProcessName}", ConsoleColor.Green);
-
-				var processTimeoutResponse = new ProcessTimeoutResponse
-				{
-					ProcessName = processTimeoutRequest.ProcessName
-				};
 
 				var props = _sendAndReplyChannel.CreateBasicProperties();
 				props.Type = MessageType.ProcessTimeoutResponse.GetDescription();

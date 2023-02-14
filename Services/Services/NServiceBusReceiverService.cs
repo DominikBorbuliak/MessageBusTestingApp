@@ -190,14 +190,9 @@ namespace Services.Services
 	{
 		public async Task Handle(ProcessTimeoutRequest processTimeoutRequest, IMessageHandlerContext context)
 		{
-			ConsoleUtils.WriteLineColor($"Received process timeout request: {processTimeoutRequest.ProcessName}. Waiting for: {processTimeoutRequest.MillisecondsTimeout}ms", ConsoleColor.Green);
-			await Task.Delay(processTimeoutRequest.MillisecondsTimeout, context.CancellationToken);
-			ConsoleUtils.WriteLineColor($"Sending process timeout response: {processTimeoutRequest.ProcessName}", ConsoleColor.Green);
-
-			var processTimeoutResponse = new ProcessTimeoutResponse
-			{
-				ProcessName = processTimeoutRequest.ProcessName
-			};
+			var processTimeoutResponse = await ProcessTimeoutRequestHandler.HandleAndGenerateResponse(processTimeoutRequest);
+			if (processTimeoutResponse == null)
+				return;
 
 			await context.Reply(processTimeoutResponse);
 		}
