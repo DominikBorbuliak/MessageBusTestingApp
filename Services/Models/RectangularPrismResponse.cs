@@ -28,8 +28,18 @@ namespace Services.Models
 	/// </summary>
 	public static class RectangularPrismResponseMapper
 	{
-		public static ServiceBusMessage ToServiceBusMessage(this RectangularPrismResponse rectangularPrismResponse) => new ServiceBusMessage(JsonSerializer.Serialize(rectangularPrismResponse));
+		/// <summary>
+		/// Formats RectangularPrismResponse to ServiceBusMessage
+		/// </summary>
+		/// <param name="rectangularPrismResponse"></param>
+		/// <returns></returns>
+		public static ServiceBusMessage ToServiceBusMessage(this RectangularPrismResponse rectangularPrismResponse) => new(JsonSerializer.Serialize(rectangularPrismResponse));
 
+		/// <summary>
+		/// Formats RectangularPrismResponse to RabbitMQ message
+		/// </summary>
+		/// <param name="rectangularPrismResponse"></param>
+		/// <returns></returns>
 		public static byte[] ToRabbitMQMessage(this RectangularPrismResponse rectangularPrismResponse) => Encoding.UTF8.GetBytes(JsonSerializer.Serialize(rectangularPrismResponse));
 	}
 }

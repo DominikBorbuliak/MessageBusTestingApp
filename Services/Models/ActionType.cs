@@ -19,7 +19,7 @@ namespace Services.Models
 		[MenuDisplayName("Send Only - N Random Messages - Advanced")]
 		SendOnlyNRandomAdvancedMessages,
 
-		[MenuDisplayName("Send Only - Simulate Exception")]
+		[MenuDisplayName("Send Only - Simulate Exception Thrown in Receiver")]
 		SendOnlySimulateException,
 
 		[MenuDisplayName("Send & Reply - Surface area and Volume of Rectangular Prism")]
@@ -28,7 +28,7 @@ namespace Services.Models
 		[MenuDisplayName("Send & Reply - Simulate N Clients")]
 		SendAndReplySimulateNClients,
 
-		[MenuDisplayName("Send & Reply - Simulate Exception")]
+		[MenuDisplayName("Send & Reply - Simulate Exception Thrown in Receiver")]
 		SendAndReplySimulateException
 	}
 }

@@ -116,9 +116,11 @@ namespace Services.Services
 	/// </summary>
 	public class NServiceBusExceptionMessageHandler : IHandleMessages<ExceptionMessage>
 	{
-		// IMessageHandlerContext does not include delivery count property so we replace it with this property
-		// Property must be static as NServiceBus creates a new instance for each message handle attempt
-		private static IDictionary<string, int> _deliveryCounts = new Dictionary<string, int>();
+		/// <summary>
+		/// IMessageHandlerContext does not include delivery count property so we replace it with this property
+		/// Property must be static as NServiceBus creates a new instance for each message handle attempt
+		/// </summary>
+		private static readonly IDictionary<string, int> _deliveryCounts = new Dictionary<string, int>();
 
 		public async Task Handle(ExceptionMessage message, IMessageHandlerContext context)
 		{
@@ -148,11 +150,16 @@ namespace Services.Services
 	/// </summary>
 	public class NServiceBusRectangularPrismRequestHandler : IHandleMessages<RectangularPrismRequest>
 	{
-		// IMessageHandlerContext does not include delivery count property so we replace it with this property
-		// Property must be static as NServiceBus creates a new instance for each message handle attempt
-		private static IDictionary<string, int> _deliveryCounts = new Dictionary<string, int>();
+		/// <summary>
+		/// IMessageHandlerContext does not include delivery count property so we replace it with this property
+		/// Property must be static as NServiceBus creates a new instance for each message handle attempt
+		/// </summary>
+		private static readonly IDictionary<string, int> _deliveryCounts = new Dictionary<string, int>();
 
-		private static int _maxNumberOfDeliveryCounts = 10;
+		/// <summary>
+		/// Simulate simple error handling logic with maximum number of delivery attempts
+		/// </summary>
+		private static readonly int _maxNumberOfDeliveryCounts = 10;
 
 		public async Task Handle(RectangularPrismRequest rectangularPrismRequest, IMessageHandlerContext context)
 		{

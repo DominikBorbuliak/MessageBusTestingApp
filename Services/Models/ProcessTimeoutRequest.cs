@@ -26,11 +26,21 @@ namespace Services.Models
 	/// </summary>
 	public static class ProcessTimeoutRequestMapper
 	{
-		public static ServiceBusMessage ToServiceBusMessage(this ProcessTimeoutRequest processTimeoutRequest) => new ServiceBusMessage(JsonSerializer.Serialize(processTimeoutRequest))
+		/// <summary>
+		/// Formats ProcessTimeoutRequest to ServiceBusMessage
+		/// </summary>
+		/// <param name="processTimeoutRequest"></param>
+		/// <returns></returns>
+		public static ServiceBusMessage ToServiceBusMessage(this ProcessTimeoutRequest processTimeoutRequest) => new(JsonSerializer.Serialize(processTimeoutRequest))
 		{
 			Subject = MessageType.ProcessTimeoutRequest.GetDescription()
 		};
 
+		/// <summary>
+		/// Formats ProcessTimeoutRequest to RabbitMQ message
+		/// </summary>
+		/// <param name="processTimeoutRequest"></param>
+		/// <returns></returns>
 		public static byte[] ToRabbitMQMessage(this ProcessTimeoutRequest processTimeoutRequest) => Encoding.UTF8.GetBytes(JsonSerializer.Serialize(processTimeoutRequest));
 	}
 }

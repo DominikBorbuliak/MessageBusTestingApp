@@ -2,6 +2,9 @@
 
 namespace Services.Contracts
 {
+	/// <summary>
+	/// Interface used for all sender services
+	/// </summary>
 	public interface ISenderService
 	{
 		/// <summary>
@@ -19,7 +22,7 @@ namespace Services.Contracts
 		Task SendAdvancedMessage(AdvancedMessage advancedMessage);
 
 		/// <summary>
-		/// Sends exception message to simulate exception thrown during processing
+		/// Sends exception message to simulate exception thrown during processing - Send Only
 		/// </summary>
 		/// <param name="exceptionMessage"></param>
 		/// <returns></returns>
@@ -27,6 +30,7 @@ namespace Services.Contracts
 
 		/// <summary>
 		/// Sends rectangular prism request and waits for response
+		/// Can be used to simulate exception thrown during processing - Send & Reply
 		/// </summary>
 		/// <param name="rectangularPrismRequest"></param>
 		/// <returns></returns>
@@ -40,7 +44,7 @@ namespace Services.Contracts
 		Task SendAndReplyProcessTimeout(ProcessTimeoutRequest processTimeoutRequest);
 
 		/// <summary>
-		/// Closes everything that was opened due sending of messages and clears memory
+		/// Closes everything that was opened due to sending of messages and clears memory
 		/// </summary>
 		/// <returns></returns>
 		Task FinishJob();

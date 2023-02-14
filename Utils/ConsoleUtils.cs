@@ -1,5 +1,8 @@
 ﻿namespace Utils
 {
+	/// <summary>
+	/// Class to store useful functions for console input and output opperations
+	/// </summary>
 	public class ConsoleUtils
 	{
 		/// <summary>

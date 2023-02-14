@@ -11,9 +11,21 @@ namespace Services.Models
 	public class RectangularPrismRequest : IMessage
 	{
 		public double EdgeA { get; set; }
+
 		public double EdgeB { get; set; }
+
 		public double EdgeC { get; set; }
+
+		/// <summary>
+		/// Text of the exception that will be thrown in receiver
+		/// </summary>
 		public string ExceptionText { get; set; } = string.Empty;
+
+		/// <summary>
+		/// Number of attempt on which reciever should successfuly process message
+		/// 0 or less - never
+		/// 1 - first attempt
+		/// </summary>
 		public int SucceedOn { get; set; }
 
 		public override string ToString()
@@ -33,11 +45,21 @@ namespace Services.Models
 	/// </summary>
 	public static class RectangularPrismRequestMapper
 	{
-		public static ServiceBusMessage ToServiceBusMessage(this RectangularPrismRequest rectangularPrismRequest) => new ServiceBusMessage(JsonSerializer.Serialize(rectangularPrismRequest))
+		/// <summary>
+		/// Formats RectangularPrismRequest to ServiceBusMessage
+		/// </summary>
+		/// <param name="rectangularPrismRequest"></param>
+		/// <returns></returns>
+		public static ServiceBusMessage ToServiceBusMessage(this RectangularPrismRequest rectangularPrismRequest) => new(JsonSerializer.Serialize(rectangularPrismRequest))
 		{
 			Subject = MessageType.RectangularPrismRequest.GetDescription()
 		};
 
+		/// <summary>
+		/// Formats RectangularPrismRequest to RabbitMQ message
+		/// </summary>
+		/// <param name="rectangularPrismRequest"></param>
+		/// <returns></returns>
 		public static byte[] ToRabbitMQMessage(this RectangularPrismRequest rectangularPrismRequest) => Encoding.UTF8.GetBytes(JsonSerializer.Serialize(rectangularPrismRequest));
 	}
 }

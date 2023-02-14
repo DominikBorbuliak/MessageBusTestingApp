@@ -1,7 +1,7 @@
 ﻿namespace Services.Models
 {
 	/// <summary>
-	/// Class that represents response message returned if exception occured in receiver in send and reply mode
+	/// Model that represents response message returned if exception occured in receiver in - Send & Reply
 	/// </summary>
 	public class ExceptionResponse : IMessage
 	{

@@ -83,7 +83,7 @@ namespace Services.Services
 					return;
 				}
 
-				if (arguments.Message.DeliveryCount < exceptionMessage.SucceedOn)
+				if (exceptionMessage.SucceedOn <= 0 || arguments.Message.DeliveryCount < exceptionMessage.SucceedOn)
 				{
 					ConsoleUtils.WriteLineColor($"Throwing exception with text: {exceptionMessage.ExceptionText}", ConsoleColor.Yellow);
 					throw new Exception(exceptionMessage.ExceptionText);
@@ -163,6 +163,11 @@ namespace Services.Services
 			await arguments.CompleteMessageAsync(arguments.Message);
 		}
 
+		/// <summary>
+		/// Error handler which is trigerred when exception is thrown
+		/// </summary>
+		/// <param name="args"></param>
+		/// <returns></returns>
 		private async Task ErrorHandler(ProcessErrorEventArgs args)
 		{
 			await Task.Run(() =>

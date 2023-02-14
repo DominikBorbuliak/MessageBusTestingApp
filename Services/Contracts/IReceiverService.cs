@@ -1,5 +1,8 @@
 ﻿namespace Services.Contracts
 {
+	/// <summary>
+	/// Interface used for all receiver services
+	/// </summary>
 	public interface IReceiverService
 	{
 		/// <summary>

@@ -17,11 +17,21 @@ namespace Services.Models
 	/// </summary>
 	public static class SimpleMessageMapper
 	{
-		public static ServiceBusMessage ToServiceBusMessage(this SimpleMessage simpleMessage) => new ServiceBusMessage(simpleMessage.Text)
+		/// <summary>
+		/// Formats SimpleMessage to ServiceBusMessage
+		/// </summary>
+		/// <param name="simpleMessage"></param>
+		/// <returns></returns>
+		public static ServiceBusMessage ToServiceBusMessage(this SimpleMessage simpleMessage) => new(simpleMessage.Text)
 		{
 			Subject = MessageType.SimpleMessage.GetDescription()
 		};
 
+		/// <summary>
+		/// Formats SimpleMessage to ServiceBusMessage
+		/// </summary>
+		/// <param name="simpleMessage"></param>
+		/// <returns></returns>
 		public static byte[] ToRabbitMQMessage(this SimpleMessage simpleMessage) => Encoding.UTF8.GetBytes(simpleMessage.Text);
 	}
 }

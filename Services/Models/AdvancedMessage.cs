@@ -11,10 +11,15 @@ namespace Services.Models
 	public class AdvancedMessage : IMessage
 	{
 		public string Name { get; set; } = string.Empty;
+
 		public string Surname { get; set; } = string.Empty;
+
 		public int Age { get; set; }
+
 		public string Email { get; set; } = string.Empty;
+
 		public string Description { get; set; } = string.Empty;
+
 		public AdvancedMessageAddress Address { get; set; } = new AdvancedMessageAddress();
 
 		public override string ToString()
@@ -38,12 +43,19 @@ namespace Services.Models
 		}
 	}
 
+	/// <summary>
+	/// Model to simulate another model in main model
+	/// </summary>
 	public class AdvancedMessageAddress
 	{
 		public string StreetName { get; set; } = string.Empty;
+
 		public int BuildingNumber { get; set; }
+
 		public string City { get; set; } = string.Empty;
+
 		public string PostalCode { get; set; } = string.Empty;
+
 		public string Country { get; set; } = string.Empty;
 	}
 
@@ -52,11 +64,21 @@ namespace Services.Models
 	/// </summary>
 	public static class AdvancedMessageMapper
 	{
-		public static ServiceBusMessage ToServiceBusMessage(this AdvancedMessage advancedMessage) => new ServiceBusMessage(JsonSerializer.Serialize(advancedMessage))
+		/// <summary>
+		/// Formats AdvancedMessage to ServiceBusMessage
+		/// </summary>
+		/// <param name="advancedMessage"></param>
+		/// <returns></returns>
+		public static ServiceBusMessage ToServiceBusMessage(this AdvancedMessage advancedMessage) => new(JsonSerializer.Serialize(advancedMessage))
 		{
 			Subject = MessageType.AdvancedMessage.GetDescription()
 		};
 
+		/// <summary>
+		/// Formats AdvancedMessage to RabbitMQ message
+		/// </summary>
+		/// <param name="advancedMessage"></param>
+		/// <returns></returns>
 		public static byte[] ToRabbitMQMessage(this AdvancedMessage advancedMessage) => Encoding.UTF8.GetBytes(JsonSerializer.Serialize(advancedMessage));
 	}
 }

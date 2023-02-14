@@ -19,8 +19,15 @@ namespace Services.Services
 		private readonly IModel _sendAndReplyChannel;
 		private readonly AsyncEventingBasicConsumer _sendAndReplyConsumer;
 
-		private IDictionary<string, int> _deliveryCounts;
-		private int _maxNumberOfDeliveryCounts = 10;
+		/// <summary>
+		/// BasicDeliverEventArgs does not include delivery count property so we replace it with this property
+		/// </summary>
+		private readonly IDictionary<string, int> _deliveryCounts;
+
+		/// <summary>
+		/// Simulate simple error handling logic with maximum number of delivery attempts
+		/// </summary>
+		private readonly int _maxNumberOfDeliveryCounts = 10;
 
 		public RabbitMQReceiverService(IConfiguration configuration)
 		{

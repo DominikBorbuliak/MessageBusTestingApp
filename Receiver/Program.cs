@@ -8,7 +8,7 @@ using Utils;
 
 namespace Receiver
 {
-    public class Program
+	public class Program
 	{
 		private static IConfiguration Configuration { get; set; } = null!;
 		private static MessageBusType MessageBusType;
@@ -30,7 +30,7 @@ namespace Receiver
 
 			Configuration = builder.Build();
 
-			// Convigure services
+			// Configure services
 			IServiceCollection services = new ServiceCollection();
 			ConfigureServices(services);
 
