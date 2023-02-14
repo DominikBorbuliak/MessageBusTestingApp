@@ -190,6 +190,7 @@ namespace Services.Services
 						_deliveryCounts.Add(arguments.BasicProperties.MessageId, 1);
 
 					var deliveryCount = _deliveryCounts[arguments.BasicProperties.MessageId];
+					_deliveryCounts[arguments.BasicProperties.MessageId] += 1;
 
 					if (_maxNumberOfDeliveryCounts <= deliveryCount)
 					{
@@ -212,24 +213,9 @@ namespace Services.Services
 						return;
 					}
 
-					if (rectangularPrismRequest.SucceedOn <= 0 || deliveryCount < rectangularPrismRequest.SucceedOn)
-					{
-						ConsoleUtils.WriteLineColor($"Throwing exception with text: {rectangularPrismRequest.ExceptionText}", ConsoleColor.Yellow);
-
-						_deliveryCounts[arguments.BasicProperties.MessageId] += 1;
-
-						throw new Exception(rectangularPrismRequest.ExceptionText);
-					}
-
-					ConsoleUtils.WriteLineColor($"Rectangular prism request received:\n{rectangularPrismRequest}", ConsoleColor.Green);
-
-					var rectangularPrismResponse = new RectangularPrismResponse
-					{
-						SurfaceArea = 2 * (rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeB + rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeC + rectangularPrismRequest.EdgeB * rectangularPrismRequest.EdgeC),
-						Volume = rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeB * rectangularPrismRequest.EdgeC
-					};
-
-					ConsoleUtils.WriteLineColor("Sending rectangular prism response", ConsoleColor.Green);
+					var rectangularPrismResponse = RectangularPrismRequest.HandleAndGenerateResponse(rectangularPrismRequest, deliveryCount);
+					if (rectangularPrismResponse == null)
+						return;
 
 					var props = _sendAndReplyChannel.CreateBasicProperties();
 					props.Type = MessageType.RectangularPrismResponse.GetDescription();

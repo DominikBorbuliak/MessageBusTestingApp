@@ -108,27 +108,9 @@ namespace Services.Services
 			{
 				var rectangularPrismRequest = JsonSerializer.Deserialize<RectangularPrismRequest>(body);
 
-				if (rectangularPrismRequest == null)
-				{
-					ConsoleUtils.WriteLineColor("No request found for: RectangularPrismRequest!", ConsoleColor.Red);
+				var rectangularPrismResponse = RectangularPrismRequest.HandleAndGenerateResponse(rectangularPrismRequest, arguments.Message.DeliveryCount);
+				if (rectangularPrismResponse == null)
 					return;
-				}
-
-				if (rectangularPrismRequest.SucceedOn <= 0 || arguments.Message.DeliveryCount < rectangularPrismRequest.SucceedOn)
-				{
-					ConsoleUtils.WriteLineColor($"Throwing exception with text: {rectangularPrismRequest.ExceptionText}", ConsoleColor.Yellow);
-					throw new Exception(rectangularPrismRequest.ExceptionText);
-				}
-
-				ConsoleUtils.WriteLineColor($"Rectangular prism request received:\n{rectangularPrismRequest}", ConsoleColor.Green);
-
-				var rectangularPrismResponse = new RectangularPrismResponse
-				{
-					SurfaceArea = 2 * (rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeB + rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeC + rectangularPrismRequest.EdgeB * rectangularPrismRequest.EdgeC),
-					Volume = rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeB * rectangularPrismRequest.EdgeC
-				};
-
-				ConsoleUtils.WriteLineColor("Sending rectangular prism response", ConsoleColor.Green);
 
 				var response = rectangularPrismResponse.ToServiceBusMessage();
 				response.SessionId = arguments.SessionId;
