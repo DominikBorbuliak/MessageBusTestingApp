@@ -108,7 +108,7 @@ namespace Services.Services
 			{
 				var rectangularPrismRequest = JsonSerializer.Deserialize<RectangularPrismRequest>(body);
 
-				var rectangularPrismResponse = RectangularPrismRequest.HandleAndGenerateResponse(rectangularPrismRequest, arguments.Message.DeliveryCount);
+				var rectangularPrismResponse = RectangularPrismRequestHandler.HandleAndGenerateResponse(rectangularPrismRequest, arguments.Message.DeliveryCount);
 				if (rectangularPrismResponse == null)
 					return;
 

@@ -175,7 +175,7 @@ namespace Services.Services
 				return;
 			}
 
-			var rectangularPrismResponse = RectangularPrismRequest.HandleAndGenerateResponse(rectangularPrismRequest, deliveryCount);
+			var rectangularPrismResponse = RectangularPrismRequestHandler.HandleAndGenerateResponse(rectangularPrismRequest, deliveryCount);
 			if (rectangularPrismResponse == null)
 				return;
 

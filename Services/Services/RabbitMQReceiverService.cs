@@ -180,12 +180,6 @@ namespace Services.Services
 				{
 					var rectangularPrismRequest = JsonSerializer.Deserialize<RectangularPrismRequest>(body);
 
-					if (rectangularPrismRequest == null)
-					{
-						ConsoleUtils.WriteLineColor("No request found for: RectangularPrismRequest!", ConsoleColor.Red);
-						return;
-					}
-
 					if (!_deliveryCounts.ContainsKey(arguments.BasicProperties.MessageId))
 						_deliveryCounts.Add(arguments.BasicProperties.MessageId, 1);
 
@@ -213,7 +207,7 @@ namespace Services.Services
 						return;
 					}
 
-					var rectangularPrismResponse = RectangularPrismRequest.HandleAndGenerateResponse(rectangularPrismRequest, deliveryCount);
+					var rectangularPrismResponse = RectangularPrismRequestHandler.HandleAndGenerateResponse(rectangularPrismRequest, deliveryCount);
 					if (rectangularPrismResponse == null)
 						return;
 
