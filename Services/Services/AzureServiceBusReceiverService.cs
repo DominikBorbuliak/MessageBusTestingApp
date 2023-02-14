@@ -77,19 +77,8 @@ namespace Services.Services
 			{
 				var exceptionMessage = JsonSerializer.Deserialize<ExceptionMessage>(body);
 
-				if (exceptionMessage == null)
-				{
-					ConsoleUtils.WriteLineColor("No message found for: ExceptionMessage!", ConsoleColor.Red);
+				if (!ExceptionMessageHandler.Handle(exceptionMessage, arguments.Message.DeliveryCount))
 					return;
-				}
-
-				if (exceptionMessage.SucceedOn <= 0 || arguments.Message.DeliveryCount < exceptionMessage.SucceedOn)
-				{
-					ConsoleUtils.WriteLineColor($"Throwing exception with text: {exceptionMessage.ExceptionText}", ConsoleColor.Yellow);
-					throw new Exception(exceptionMessage.ExceptionText);
-				}
-
-				ConsoleUtils.WriteLineColor($"Exception messsage with text: {exceptionMessage.ExceptionText} succeeded!", ConsoleColor.Green);
 			}
 
 			await arguments.CompleteMessageAsync(arguments.Message);

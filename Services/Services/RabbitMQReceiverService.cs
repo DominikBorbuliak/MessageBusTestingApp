@@ -129,27 +129,17 @@ namespace Services.Services
 					{
 						var exceptionMessage = JsonSerializer.Deserialize<ExceptionMessage>(body);
 
-						if (exceptionMessage == null)
-						{
-							ConsoleUtils.WriteLineColor("No message found for: ExceptionMessage!", ConsoleColor.Red);
-							return;
-						}
-
 						if (!_deliveryCounts.ContainsKey(arguments.BasicProperties.MessageId))
 							_deliveryCounts.Add(arguments.BasicProperties.MessageId, 1);
 
 						var deliveryCount = _deliveryCounts[arguments.BasicProperties.MessageId];
+						_deliveryCounts[arguments.BasicProperties.MessageId] += 1;
 
-						if (deliveryCount < exceptionMessage.SucceedOn)
-						{
-							ConsoleUtils.WriteLineColor($"Throwing exception with text: {exceptionMessage.ExceptionText}", ConsoleColor.Yellow);
+						if (_maxNumberOfDeliveryCounts <= deliveryCount)
+							return;
 
-							_deliveryCounts[arguments.BasicProperties.MessageId] += 1;
-
-							throw new Exception(exceptionMessage.ExceptionText);
-						}
-
-						ConsoleUtils.WriteLineColor($"Exception messsage with text: {exceptionMessage.ExceptionText} succeeded!", ConsoleColor.Green);
+						if (!ExceptionMessageHandler.Handle(exceptionMessage, deliveryCount))
+							return;
 
 						_sendOnlyChannel.BasicAck(
 							deliveryTag: arguments.DeliveryTag,

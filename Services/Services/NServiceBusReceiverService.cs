@@ -122,6 +122,11 @@ namespace Services.Services
 		/// </summary>
 		private static readonly IDictionary<string, int> _deliveryCounts = new Dictionary<string, int>();
 
+		/// <summary>
+		/// Simulate simple error handling logic with maximum number of delivery attempts
+		/// </summary>
+		private static readonly int _maxNumberOfDeliveryCounts = 10;
+
 		public async Task Handle(ExceptionMessage message, IMessageHandlerContext context)
 		{
 			await Task.Run(() =>
@@ -130,17 +135,12 @@ namespace Services.Services
 					_deliveryCounts.Add(context.MessageId, 1);
 
 				var deliveryCount = _deliveryCounts[context.MessageId];
+				_deliveryCounts[context.MessageId] += 1;
 
-				if (deliveryCount < message.SucceedOn)
-				{
-					ConsoleUtils.WriteLineColor($"Throwing exception with text: {message.ExceptionText}", ConsoleColor.Yellow);
+				if (_maxNumberOfDeliveryCounts <= deliveryCount)
+					return;
 
-					_deliveryCounts[context.MessageId] += 1;
-
-					throw new Exception(message.ExceptionText);
-				}
-
-				ConsoleUtils.WriteLineColor($"Exception messsage with text: {message.ExceptionText} succeeded!", ConsoleColor.Green);
+				ExceptionMessageHandler.Handle(message, deliveryCount);
 			}, context.CancellationToken);
 		}
 	}
