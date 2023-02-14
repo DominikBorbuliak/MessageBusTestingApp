@@ -1,6 +1,4 @@
-﻿using Azure.Messaging.ServiceBus;
-using System.Text;
-using System.Text.Json;
+﻿using System.Text;
 using Utils;
 
 namespace Services.Models
@@ -38,29 +36,6 @@ namespace Services.Models
 
 			return stringBuilder.ToString();
 		}
-	}
-
-	/// <summary>
-	/// Mapper class to format rectangular prism request to required format
-	/// </summary>
-	public static class RectangularPrismRequestMapper
-	{
-		/// <summary>
-		/// Formats RectangularPrismRequest to ServiceBusMessage
-		/// </summary>
-		/// <param name="rectangularPrismRequest"></param>
-		/// <returns></returns>
-		public static ServiceBusMessage ToServiceBusMessage(this RectangularPrismRequest rectangularPrismRequest) => new(JsonSerializer.Serialize(rectangularPrismRequest))
-		{
-			Subject = MessageType.RectangularPrismRequest.GetDescription()
-		};
-
-		/// <summary>
-		/// Formats RectangularPrismRequest to RabbitMQ message
-		/// </summary>
-		/// <param name="rectangularPrismRequest"></param>
-		/// <returns></returns>
-		public static byte[] ToRabbitMQMessage(this RectangularPrismRequest rectangularPrismRequest) => Encoding.UTF8.GetBytes(JsonSerializer.Serialize(rectangularPrismRequest));
 	}
 
 	/// <summary>

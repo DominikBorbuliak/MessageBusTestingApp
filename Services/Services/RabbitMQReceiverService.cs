@@ -2,6 +2,7 @@
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using Services.Contracts;
+using Services.Mappers;
 using Services.Models;
 using System.Text;
 using System.Text.Json;
@@ -198,7 +199,7 @@ namespace Services.Services
 							routingKey: arguments.BasicProperties.ReplyTo,
 							mandatory: false,
 							basicProperties: exceptionResponseProps,
-							body: Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new ExceptionResponse { Text = "No response found for: RectangularPrismResponse!" }))
+							body: new ExceptionResponse { Text = "No response found for: RectangularPrismResponse!" }.ToRabbitMQMessage()
 						);
 
 						_sendAndReplyChannel.BasicAck(

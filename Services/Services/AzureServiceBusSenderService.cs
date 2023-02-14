@@ -1,6 +1,7 @@
 ﻿using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Configuration;
 using Services.Contracts;
+using Services.Mappers;
 using Services.Models;
 using System.Text.Json;
 using Utils;

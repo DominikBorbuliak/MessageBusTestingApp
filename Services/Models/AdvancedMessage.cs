@@ -1,6 +1,4 @@
-﻿using Azure.Messaging.ServiceBus;
-using System.Text;
-using System.Text.Json;
+﻿using System.Text;
 using Utils;
 
 namespace Services.Models
@@ -57,29 +55,6 @@ namespace Services.Models
 		public string PostalCode { get; set; } = string.Empty;
 
 		public string Country { get; set; } = string.Empty;
-	}
-
-	/// <summary>
-	/// Mapper class to format advanced message to required format
-	/// </summary>
-	public static class AdvancedMessageMapper
-	{
-		/// <summary>
-		/// Formats AdvancedMessage to ServiceBusMessage
-		/// </summary>
-		/// <param name="advancedMessage"></param>
-		/// <returns></returns>
-		public static ServiceBusMessage ToServiceBusMessage(this AdvancedMessage advancedMessage) => new(JsonSerializer.Serialize(advancedMessage))
-		{
-			Subject = MessageType.AdvancedMessage.GetDescription()
-		};
-
-		/// <summary>
-		/// Formats AdvancedMessage to RabbitMQ message
-		/// </summary>
-		/// <param name="advancedMessage"></param>
-		/// <returns></returns>
-		public static byte[] ToRabbitMQMessage(this AdvancedMessage advancedMessage) => Encoding.UTF8.GetBytes(JsonSerializer.Serialize(advancedMessage));
 	}
 
 	/// <summary>
