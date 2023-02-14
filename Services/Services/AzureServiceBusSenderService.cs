@@ -1,6 +1,7 @@
 ﻿using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Configuration;
 using Services.Contracts;
+using Services.Mappers;
 using Services.Models;
 using System.Text.Json;
 using Utils;
@@ -33,20 +34,11 @@ namespace Services.Services
 			_sendAndReplyServiceBusReceiver = _serviceBusClient.AcceptSessionAsync(_configuration.GetSection("ConnectionSettings")["SendAndReplySenderQueueName"], _sendAndReplySessionId.ToString()).Result;
 		}
 
-		public async Task SendSimpleMessage(SimpleMessage simpleMessage)
-		{
-			await _sendOnlyServiceBusSender.SendMessageAsync(simpleMessage.ToServiceBusMessage());
-		}
+		public async Task SendSimpleMessage(SimpleMessage simpleMessage) => await _sendOnlyServiceBusSender.SendMessageAsync(simpleMessage.ToServiceBusMessage());
 
-		public async Task SendAdvancedMessage(AdvancedMessage advancedMessage)
-		{
-			await _sendOnlyServiceBusSender.SendMessageAsync(advancedMessage.ToServiceBusMessage());
-		}
+		public async Task SendAdvancedMessage(AdvancedMessage advancedMessage) => await _sendOnlyServiceBusSender.SendMessageAsync(advancedMessage.ToServiceBusMessage());
 
-		public async Task SendExceptionMessage(ExceptionMessage exceptionMessage)
-		{
-			await _sendOnlyServiceBusSender.SendMessageAsync(exceptionMessage.ToServiceBusMessage());
-		}
+		public async Task SendExceptionMessage(ExceptionMessage exceptionMessage) => await _sendOnlyServiceBusSender.SendMessageAsync(exceptionMessage.ToServiceBusMessage());
 
 		public async Task SendAndReplyRectangularPrism(RectangularPrismRequest rectangularPrismRequest)
 		{

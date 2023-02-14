@@ -1,6 +1,8 @@
 ﻿using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Configuration;
 using Services.Contracts;
+using Services.Handlers;
+using Services.Mappers;
 using Services.Models;
 using System.Text.Json;
 using Utils;
@@ -71,25 +73,16 @@ namespace Services.Services
 			else if (arguments.Message.Subject.Equals(MessageType.AdvancedMessage.GetDescription()))
 			{
 				var advancedMessage = JsonSerializer.Deserialize<AdvancedMessage>(body);
-				ConsoleUtils.WriteLineColor($"Advanced messsage received:\n{advancedMessage}", ConsoleColor.Green);
+
+				if (!AdvancedMessageHandler.Handle(advancedMessage))
+					return;
 			}
 			else if (arguments.Message.Subject.Equals(MessageType.ExceptionMessage.GetDescription()))
 			{
 				var exceptionMessage = JsonSerializer.Deserialize<ExceptionMessage>(body);
 
-				if (exceptionMessage == null)
-				{
-					ConsoleUtils.WriteLineColor("No message found for: ExceptionMessage!", ConsoleColor.Red);
+				if (!ExceptionMessageHandler.Handle(exceptionMessage, arguments.Message.DeliveryCount))
 					return;
-				}
-
-				if (arguments.Message.DeliveryCount < exceptionMessage.SucceedOn)
-				{
-					ConsoleUtils.WriteLineColor($"Throwing exception with text: {exceptionMessage.ExceptionText}", ConsoleColor.Yellow);
-					throw new Exception(exceptionMessage.ExceptionText);
-				}
-
-				ConsoleUtils.WriteLineColor($"Exception messsage with text: {exceptionMessage.ExceptionText} succeeded!", ConsoleColor.Green);
 			}
 
 			await arguments.CompleteMessageAsync(arguments.Message);
@@ -108,27 +101,9 @@ namespace Services.Services
 			{
 				var rectangularPrismRequest = JsonSerializer.Deserialize<RectangularPrismRequest>(body);
 
-				if (rectangularPrismRequest == null)
-				{
-					ConsoleUtils.WriteLineColor("No request found for: RectangularPrismRequest!", ConsoleColor.Red);
+				var rectangularPrismResponse = RectangularPrismRequestHandler.HandleAndGenerateResponse(rectangularPrismRequest, arguments.Message.DeliveryCount);
+				if (rectangularPrismResponse == null)
 					return;
-				}
-
-				if (rectangularPrismRequest.SucceedOn <= 0 || arguments.Message.DeliveryCount < rectangularPrismRequest.SucceedOn)
-				{
-					ConsoleUtils.WriteLineColor($"Throwing exception with text: {rectangularPrismRequest.ExceptionText}", ConsoleColor.Yellow);
-					throw new Exception(rectangularPrismRequest.ExceptionText);
-				}
-
-				ConsoleUtils.WriteLineColor($"Rectangular prism request received:\n{rectangularPrismRequest}", ConsoleColor.Green);
-
-				var rectangularPrismResponse = new RectangularPrismResponse
-				{
-					SurfaceArea = 2 * (rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeB + rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeC + rectangularPrismRequest.EdgeB * rectangularPrismRequest.EdgeC),
-					Volume = rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeB * rectangularPrismRequest.EdgeC
-				};
-
-				ConsoleUtils.WriteLineColor("Sending rectangular prism response", ConsoleColor.Green);
 
 				var response = rectangularPrismResponse.ToServiceBusMessage();
 				response.SessionId = arguments.SessionId;
@@ -139,20 +114,9 @@ namespace Services.Services
 			{
 				var processTimeoutRequest = JsonSerializer.Deserialize<ProcessTimeoutRequest>(body);
 
-				if (processTimeoutRequest == null)
-				{
-					ConsoleUtils.WriteLineColor("No request found for: ProcessTimeoutRequest!", ConsoleColor.Red);
+				var processTimeoutResponse = await ProcessTimeoutRequestHandler.HandleAndGenerateResponse(processTimeoutRequest);
+				if (processTimeoutResponse == null)
 					return;
-				}
-
-				ConsoleUtils.WriteLineColor($"Received process timeout request: {processTimeoutRequest.ProcessName}. Waiting for: {processTimeoutRequest.MillisecondsTimeout}ms", ConsoleColor.Green);
-				await Task.Delay(processTimeoutRequest.MillisecondsTimeout);
-				ConsoleUtils.WriteLineColor($"Sending process timeout response: {processTimeoutRequest.ProcessName}", ConsoleColor.Green);
-
-				var processTimeoutResponse = new ProcessTimeoutResponse
-				{
-					ProcessName = processTimeoutRequest.ProcessName
-				};
 
 				var response = processTimeoutResponse.ToServiceBusMessage();
 				response.SessionId = arguments.SessionId;
@@ -163,6 +127,11 @@ namespace Services.Services
 			await arguments.CompleteMessageAsync(arguments.Message);
 		}
 
+		/// <summary>
+		/// Error handler which is trigerred when exception is thrown
+		/// </summary>
+		/// <param name="args"></param>
+		/// <returns></returns>
 		private async Task ErrorHandler(ProcessErrorEventArgs args)
 		{
 			await Task.Run(() =>

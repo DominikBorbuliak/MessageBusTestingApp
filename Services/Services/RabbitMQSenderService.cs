@@ -2,6 +2,7 @@
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using Services.Contracts;
+using Services.Mappers;
 using Services.Models;
 using System.Text;
 using System.Text.Json;
@@ -164,7 +165,7 @@ namespace Services.Services
 		/// Handler method used for rectangular prism and process timeout responses
 		/// </summary>
 		/// <param name="arguments"></param>
-		private void ResponseHandler(BasicDeliverEventArgs arguments)
+		private static void ResponseHandler(BasicDeliverEventArgs arguments)
 		{
 			var body = Encoding.UTF8.GetString(arguments.Body.ToArray());
 
@@ -190,7 +191,10 @@ namespace Services.Services
 			{
 				var response = JsonSerializer.Deserialize<ExceptionResponse>(body);
 
-				ConsoleUtils.WriteLineColor(response.Text, ConsoleColor.Red);
+				if (response != null)
+					ConsoleUtils.WriteLineColor(response.Text, ConsoleColor.Red);
+				else
+					ConsoleUtils.WriteLineColor("No response found for: ExceptionResponse!", ConsoleColor.Red);
 			}
 		}
 	}

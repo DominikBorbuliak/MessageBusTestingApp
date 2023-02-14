@@ -62,7 +62,6 @@ namespace Services.Services
 
 		public async Task SendSimpleMessage(SimpleMessage simpleMessage) => await _sendOnlyEndpointInstance.Send(simpleMessage);
 
-
 		public async Task SendAdvancedMessage(AdvancedMessage advancedMessage) => await _sendOnlyEndpointInstance.Send(advancedMessage);
 
 		public async Task SendExceptionMessage(ExceptionMessage exceptionMessage) => await _sendOnlyEndpointInstance.Send(exceptionMessage);
@@ -107,6 +106,9 @@ namespace Services.Services
 		}
 	}
 
+	/// <summary>
+	/// Handler class for exception response
+	/// </summary>
 	public class NServiceBusExceptionResponseHandler : IHandleMessages<ExceptionResponse>
 	{
 		public async Task Handle(ExceptionResponse message, IMessageHandlerContext context)

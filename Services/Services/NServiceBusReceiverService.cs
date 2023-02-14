@@ -4,6 +4,7 @@ using NServiceBus.Extensions.Logging;
 using NServiceBus.Logging;
 using NServiceBus.Transport;
 using Services.Contracts;
+using Services.Handlers;
 using Services.Models;
 using Utils;
 
@@ -106,7 +107,7 @@ namespace Services.Services
 		{
 			await Task.Run(() =>
 			{
-				ConsoleUtils.WriteLineColor($"Advanced messsage received: {message}", ConsoleColor.Green);
+				AdvancedMessageHandler.Handle(message);
 			}, context.CancellationToken);
 		}
 	}
@@ -116,9 +117,16 @@ namespace Services.Services
 	/// </summary>
 	public class NServiceBusExceptionMessageHandler : IHandleMessages<ExceptionMessage>
 	{
-		// IMessageHandlerContext does not include delivery count property so we replace it with this property
-		// Property must be static as NServiceBus creates a new instance for each message handle attempt
-		private static IDictionary<string, int> _deliveryCounts = new Dictionary<string, int>();
+		/// <summary>
+		/// IMessageHandlerContext does not include delivery count property so we replace it with this property
+		/// Property must be static as NServiceBus creates a new instance for each message handle attempt
+		/// </summary>
+		private static readonly IDictionary<string, int> _deliveryCounts = new Dictionary<string, int>();
+
+		/// <summary>
+		/// Simulate simple error handling logic with maximum number of delivery attempts
+		/// </summary>
+		private static readonly int _maxNumberOfDeliveryCounts = 10;
 
 		public async Task Handle(ExceptionMessage message, IMessageHandlerContext context)
 		{
@@ -128,17 +136,12 @@ namespace Services.Services
 					_deliveryCounts.Add(context.MessageId, 1);
 
 				var deliveryCount = _deliveryCounts[context.MessageId];
+				_deliveryCounts[context.MessageId] += 1;
 
-				if (deliveryCount < message.SucceedOn)
-				{
-					ConsoleUtils.WriteLineColor($"Throwing exception with text: {message.ExceptionText}", ConsoleColor.Yellow);
+				if (_maxNumberOfDeliveryCounts <= deliveryCount)
+					return;
 
-					_deliveryCounts[context.MessageId] += 1;
-
-					throw new Exception(message.ExceptionText);
-				}
-
-				ConsoleUtils.WriteLineColor($"Exception messsage with text: {message.ExceptionText} succeeded!", ConsoleColor.Green);
+				ExceptionMessageHandler.Handle(message, deliveryCount);
 			}, context.CancellationToken);
 		}
 	}
@@ -148,11 +151,16 @@ namespace Services.Services
 	/// </summary>
 	public class NServiceBusRectangularPrismRequestHandler : IHandleMessages<RectangularPrismRequest>
 	{
-		// IMessageHandlerContext does not include delivery count property so we replace it with this property
-		// Property must be static as NServiceBus creates a new instance for each message handle attempt
-		private static IDictionary<string, int> _deliveryCounts = new Dictionary<string, int>();
+		/// <summary>
+		/// IMessageHandlerContext does not include delivery count property so we replace it with this property
+		/// Property must be static as NServiceBus creates a new instance for each message handle attempt
+		/// </summary>
+		private static readonly IDictionary<string, int> _deliveryCounts = new Dictionary<string, int>();
 
-		private static int _maxNumberOfDeliveryCounts = 10;
+		/// <summary>
+		/// Simulate simple error handling logic with maximum number of delivery attempts
+		/// </summary>
+		private static readonly int _maxNumberOfDeliveryCounts = 10;
 
 		public async Task Handle(RectangularPrismRequest rectangularPrismRequest, IMessageHandlerContext context)
 		{
@@ -160,6 +168,7 @@ namespace Services.Services
 				_deliveryCounts.Add(context.MessageId, 1);
 
 			var deliveryCount = _deliveryCounts[context.MessageId];
+			_deliveryCounts[context.MessageId] += 1;
 
 			if (_maxNumberOfDeliveryCounts <= deliveryCount)
 			{
@@ -167,24 +176,9 @@ namespace Services.Services
 				return;
 			}
 
-			if (rectangularPrismRequest.SucceedOn <= 0 || deliveryCount < rectangularPrismRequest.SucceedOn)
-			{
-				ConsoleUtils.WriteLineColor($"Throwing exception with text: {rectangularPrismRequest.ExceptionText}", ConsoleColor.Yellow);
-
-				_deliveryCounts[context.MessageId] += 1;
-
-				throw new Exception(rectangularPrismRequest.ExceptionText);
-			}
-
-			ConsoleUtils.WriteLineColor($"Rectangular prism request received:\n{rectangularPrismRequest}", ConsoleColor.Green);
-
-			var rectangularPrismResponse = new RectangularPrismResponse
-			{
-				SurfaceArea = 2 * (rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeB + rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeC + rectangularPrismRequest.EdgeB * rectangularPrismRequest.EdgeC),
-				Volume = rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeB * rectangularPrismRequest.EdgeC
-			};
-
-			ConsoleUtils.WriteLineColor("Sending rectangular prism response", ConsoleColor.Green);
+			var rectangularPrismResponse = RectangularPrismRequestHandler.HandleAndGenerateResponse(rectangularPrismRequest, deliveryCount);
+			if (rectangularPrismResponse == null)
+				return;
 
 			await context.Reply(rectangularPrismResponse);
 		}
@@ -197,14 +191,9 @@ namespace Services.Services
 	{
 		public async Task Handle(ProcessTimeoutRequest processTimeoutRequest, IMessageHandlerContext context)
 		{
-			ConsoleUtils.WriteLineColor($"Received process timeout request: {processTimeoutRequest.ProcessName}. Waiting for: {processTimeoutRequest.MillisecondsTimeout}ms", ConsoleColor.Green);
-			await Task.Delay(processTimeoutRequest.MillisecondsTimeout, context.CancellationToken);
-			ConsoleUtils.WriteLineColor($"Sending process timeout response: {processTimeoutRequest.ProcessName}", ConsoleColor.Green);
-
-			var processTimeoutResponse = new ProcessTimeoutResponse
-			{
-				ProcessName = processTimeoutRequest.ProcessName
-			};
+			var processTimeoutResponse = await ProcessTimeoutRequestHandler.HandleAndGenerateResponse(processTimeoutRequest);
+			if (processTimeoutResponse == null)
+				return;
 
 			await context.Reply(processTimeoutResponse);
 		}

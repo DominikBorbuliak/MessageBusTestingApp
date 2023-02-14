@@ -59,8 +59,8 @@ namespace Sender
 							break;
 					}
 
-					ConsoleUtils.WriteLineColor("Message was successfully send to queue!", ConsoleColor.Green);
-					Thread.Sleep(5000);
+					ConsoleUtils.WriteLineColor("Press anything to continue to the menu.", ConsoleColor.Green);
+					Console.ReadKey(true);
 				}
 			}
 			catch
@@ -85,7 +85,7 @@ namespace Sender
 		{
 			var simpleMessage = new SimpleMessage
 			{
-				Text = ConsoleUtils.GetUserTextInput("Please insert text of message:")
+				Text = ConsoleUtils.GetUserTextInput("Please enter text of the message:")
 			};
 
 			await _senderService.SendSimpleMessage(simpleMessage);
@@ -99,8 +99,8 @@ namespace Sender
 		{
 			var advancedMessage = new AdvancedMessage
 			{
-				Name = ConsoleUtils.GetUserTextInput("Please insert the name:"),
-				Surname = ConsoleUtils.GetUserTextInput("Please insert the surname:"),
+				Name = ConsoleUtils.GetUserTextInput("Please enter the name:"),
+				Surname = ConsoleUtils.GetUserTextInput("Please enter the surname:"),
 				Age = ConsoleUtils.GetUserIntegerInput("Please enter the age:"),
 				Email = ConsoleUtils.GetUserTextInput("Please enter the email:"),
 				Description = ConsoleUtils.GetUserTextInput("Please enter the description:"),
@@ -126,7 +126,7 @@ namespace Sender
 			var n = ConsoleUtils.GetUserIntegerInput("Please enter the number of messages you want to send:");
 
 			RandomMessageGenerator messageGenerator = new RandomMessageGenerator();
-			var randomMessages = messageGenerator.GetRandomSimpleMessages(n);
+			var randomMessages = RandomMessageGenerator.GetRandomSimpleMessages(n);
 
 			foreach (var randomMessage in randomMessages)
 				await _senderService.SendSimpleMessage(randomMessage);
@@ -148,16 +148,16 @@ namespace Sender
 		}
 
 		/// <summary>
-		/// Semds one message that requires response
+		/// Sends one message that requires response
 		/// </summary>
 		/// <returns></returns>
 		private async Task HandleSendAndReplyRectangularPrism()
 		{
 			var rectangularPrismRequest = new RectangularPrismRequest
 			{
-				EdgeA = ConsoleUtils.GetUserDoubleInput("Please insert the length of edge A:"),
-				EdgeB = ConsoleUtils.GetUserDoubleInput("Please insert the length of edge B:"),
-				EdgeC = ConsoleUtils.GetUserDoubleInput("Please insert the length of edge C:"),
+				EdgeA = ConsoleUtils.GetUserDoubleInput("Please enter the length of edge A:"),
+				EdgeB = ConsoleUtils.GetUserDoubleInput("Please enter the length of edge B:"),
+				EdgeC = ConsoleUtils.GetUserDoubleInput("Please enter the length of edge C:"),
 				SucceedOn = 1
 			};
 
@@ -175,40 +175,44 @@ namespace Sender
 			var processTimeoutRequests = new List<ProcessTimeoutRequest>();
 
 			// Requests must be created separately, as it takes some time to fill in the required information, so the simulation would not be accurate.
-			for (var i = 0; i < n; i++)
+			for (var i = 1; i <= n; i++)
 				processTimeoutRequests.Add(new ProcessTimeoutRequest
 				{
-					ProcessName = ConsoleUtils.GetUserTextInput("Please insert the name of client:"),
-					MillisecondsTimeout = ConsoleUtils.GetUserIntegerInput("Please insert the timeout in miliseconds to simulate work:")
+					ProcessName = ConsoleUtils.GetUserTextInput($"Please enter the name of {i}. client:"),
+					MillisecondsTimeout = ConsoleUtils.GetUserIntegerInput("Please enter the timeout in miliseconds to simulate work:")
 				});
 
 			await Task.WhenAll(processTimeoutRequests.Select(processTimeoutRequest => _senderService.SendAndReplyProcessTimeout(processTimeoutRequest)));
 		}
 
 		/// <summary>
-		/// Simulates exception on receiver end
+		/// Simulates exception on receiver end - Send Only
 		/// </summary>
 		/// <returns></returns>
 		private async Task HandleSendOnlySimulateException()
 		{
 			var exceptionMessage = new ExceptionMessage
 			{
-				SucceedOn = ConsoleUtils.GetUserIntegerInput("Please insert the number (1 is first try) of request on which it will succeed:"),
-				ExceptionText = ConsoleUtils.GetUserTextInput("Please insert the text of the exception:")
+				SucceedOn = ConsoleUtils.GetUserIntegerInput("Please enter the number (1 is first try, 0 or less to never succeed) of request on which it will succeed:"),
+				ExceptionText = ConsoleUtils.GetUserTextInput("Please enter the text of the exception:")
 			};
 
 			await _senderService.SendExceptionMessage(exceptionMessage);
 		}
 
+		/// <summary>
+		/// Simulates exception on receiver end - Send & Reply
+		/// </summary>
+		/// <returns></returns>
 		private async Task HandleSendAndReplySimulateException()
 		{
 			var rectangularPrismRequest = new RectangularPrismRequest
 			{
-				EdgeA = ConsoleUtils.GetUserDoubleInput("Please insert the length of edge A:"),
-				EdgeB = ConsoleUtils.GetUserDoubleInput("Please insert the length of edge B:"),
-				EdgeC = ConsoleUtils.GetUserDoubleInput("Please insert the length of edge C:"),
-				SucceedOn = ConsoleUtils.GetUserIntegerInput("Please insert the number (1 is first try, 0 or less to never succed) of request on which it will succeed:"),
-				ExceptionText = ConsoleUtils.GetUserTextInput("Please insert the text of the exception:")
+				EdgeA = ConsoleUtils.GetUserDoubleInput("Please enter the length of edge A:"),
+				EdgeB = ConsoleUtils.GetUserDoubleInput("Please enter the length of edge B:"),
+				EdgeC = ConsoleUtils.GetUserDoubleInput("Please enter the length of edge C:"),
+				SucceedOn = ConsoleUtils.GetUserIntegerInput("Please enter the number (1 is first try, 0 or less to never succeed) of request on which it will succeed:"),
+				ExceptionText = ConsoleUtils.GetUserTextInput("Please enter the text of the exception:")
 			};
 
 			await _senderService.SendAndReplyRectangularPrism(rectangularPrismRequest);

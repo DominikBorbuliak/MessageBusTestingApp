@@ -2,6 +2,8 @@
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using Services.Contracts;
+using Services.Handlers;
+using Services.Mappers;
 using Services.Models;
 using System.Text;
 using System.Text.Json;
@@ -19,8 +21,15 @@ namespace Services.Services
 		private readonly IModel _sendAndReplyChannel;
 		private readonly AsyncEventingBasicConsumer _sendAndReplyConsumer;
 
-		private IDictionary<string, int> _deliveryCounts;
-		private int _maxNumberOfDeliveryCounts = 10;
+		/// <summary>
+		/// BasicDeliverEventArgs does not include delivery count property so we replace it with this property
+		/// </summary>
+		private readonly IDictionary<string, int> _deliveryCounts;
+
+		/// <summary>
+		/// Simulate simple error handling logic with maximum number of delivery attempts
+		/// </summary>
+		private readonly int _maxNumberOfDeliveryCounts = 10;
 
 		public RabbitMQReceiverService(IConfiguration configuration)
 		{
@@ -110,11 +119,23 @@ namespace Services.Services
 				if (arguments.BasicProperties.Type.Equals(MessageType.SimpleMessage.GetDescription()))
 				{
 					ConsoleUtils.WriteLineColor($"Simple messsage received: {body}", ConsoleColor.Green);
+
+					_sendOnlyChannel.BasicAck(
+						deliveryTag: arguments.DeliveryTag,
+						multiple: false
+					);
 				}
 				else if (arguments.BasicProperties.Type.Equals(MessageType.AdvancedMessage.GetDescription()))
 				{
 					var advancedMessage = JsonSerializer.Deserialize<AdvancedMessage>(body);
-					ConsoleUtils.WriteLineColor($"Advanced messsage received:\n{advancedMessage}", ConsoleColor.Green);
+
+					if (!AdvancedMessageHandler.Handle(advancedMessage))
+						return;
+
+					_sendOnlyChannel.BasicAck(
+						deliveryTag: arguments.DeliveryTag,
+						multiple: false
+					);
 				}
 				else if (arguments.BasicProperties.Type.Equals(MessageType.ExceptionMessage.GetDescription()))
 				{
@@ -122,27 +143,17 @@ namespace Services.Services
 					{
 						var exceptionMessage = JsonSerializer.Deserialize<ExceptionMessage>(body);
 
-						if (exceptionMessage == null)
-						{
-							ConsoleUtils.WriteLineColor("No message found for: ExceptionMessage!", ConsoleColor.Red);
-							return;
-						}
-
 						if (!_deliveryCounts.ContainsKey(arguments.BasicProperties.MessageId))
 							_deliveryCounts.Add(arguments.BasicProperties.MessageId, 1);
 
 						var deliveryCount = _deliveryCounts[arguments.BasicProperties.MessageId];
+						_deliveryCounts[arguments.BasicProperties.MessageId] += 1;
 
-						if (deliveryCount < exceptionMessage.SucceedOn)
-						{
-							ConsoleUtils.WriteLineColor($"Throwing exception with text: {exceptionMessage.ExceptionText}", ConsoleColor.Yellow);
+						if (_maxNumberOfDeliveryCounts <= deliveryCount)
+							return;
 
-							_deliveryCounts[arguments.BasicProperties.MessageId] += 1;
-
-							throw new Exception(exceptionMessage.ExceptionText);
-						}
-
-						ConsoleUtils.WriteLineColor($"Exception messsage with text: {exceptionMessage.ExceptionText} succeeded!", ConsoleColor.Green);
+						if (!ExceptionMessageHandler.Handle(exceptionMessage, deliveryCount))
+							return;
 
 						_sendOnlyChannel.BasicAck(
 							deliveryTag: arguments.DeliveryTag,
@@ -173,16 +184,11 @@ namespace Services.Services
 				{
 					var rectangularPrismRequest = JsonSerializer.Deserialize<RectangularPrismRequest>(body);
 
-					if (rectangularPrismRequest == null)
-					{
-						ConsoleUtils.WriteLineColor("No request found for: RectangularPrismRequest!", ConsoleColor.Red);
-						return;
-					}
-
 					if (!_deliveryCounts.ContainsKey(arguments.BasicProperties.MessageId))
 						_deliveryCounts.Add(arguments.BasicProperties.MessageId, 1);
 
 					var deliveryCount = _deliveryCounts[arguments.BasicProperties.MessageId];
+					_deliveryCounts[arguments.BasicProperties.MessageId] += 1;
 
 					if (_maxNumberOfDeliveryCounts <= deliveryCount)
 					{
@@ -194,7 +200,7 @@ namespace Services.Services
 							routingKey: arguments.BasicProperties.ReplyTo,
 							mandatory: false,
 							basicProperties: exceptionResponseProps,
-							body: Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new ExceptionResponse { Text = "No response found for: RectangularPrismResponse!" }))
+							body: new ExceptionResponse { Text = "No response found for: RectangularPrismResponse!" }.ToRabbitMQMessage()
 						);
 
 						_sendAndReplyChannel.BasicAck(
@@ -205,24 +211,9 @@ namespace Services.Services
 						return;
 					}
 
-					if (rectangularPrismRequest.SucceedOn <= 0 || deliveryCount < rectangularPrismRequest.SucceedOn)
-					{
-						ConsoleUtils.WriteLineColor($"Throwing exception with text: {rectangularPrismRequest.ExceptionText}", ConsoleColor.Yellow);
-
-						_deliveryCounts[arguments.BasicProperties.MessageId] += 1;
-
-						throw new Exception(rectangularPrismRequest.ExceptionText);
-					}
-
-					ConsoleUtils.WriteLineColor($"Rectangular prism request received:\n{rectangularPrismRequest}", ConsoleColor.Green);
-
-					var rectangularPrismResponse = new RectangularPrismResponse
-					{
-						SurfaceArea = 2 * (rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeB + rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeC + rectangularPrismRequest.EdgeB * rectangularPrismRequest.EdgeC),
-						Volume = rectangularPrismRequest.EdgeA * rectangularPrismRequest.EdgeB * rectangularPrismRequest.EdgeC
-					};
-
-					ConsoleUtils.WriteLineColor("Sending rectangular prism response", ConsoleColor.Green);
+					var rectangularPrismResponse = RectangularPrismRequestHandler.HandleAndGenerateResponse(rectangularPrismRequest, deliveryCount);
+					if (rectangularPrismResponse == null)
+						return;
 
 					var props = _sendAndReplyChannel.CreateBasicProperties();
 					props.Type = MessageType.RectangularPrismResponse.GetDescription();
@@ -250,20 +241,9 @@ namespace Services.Services
 			{
 				var processTimeoutRequest = JsonSerializer.Deserialize<ProcessTimeoutRequest>(body);
 
-				if (processTimeoutRequest == null)
-				{
-					ConsoleUtils.WriteLineColor("No request found for: ProcessTimeoutRequest!", ConsoleColor.Red);
+				var processTimeoutResponse = await ProcessTimeoutRequestHandler.HandleAndGenerateResponse(processTimeoutRequest);
+				if (processTimeoutResponse == null)
 					return;
-				}
-
-				ConsoleUtils.WriteLineColor($"Received process timeout request: {processTimeoutRequest.ProcessName}. Waiting for: {processTimeoutRequest.MillisecondsTimeout}ms", ConsoleColor.Green);
-				await Task.Delay(processTimeoutRequest.MillisecondsTimeout);
-				ConsoleUtils.WriteLineColor($"Sending process timeout response: {processTimeoutRequest.ProcessName}", ConsoleColor.Green);
-
-				var processTimeoutResponse = new ProcessTimeoutResponse
-				{
-					ProcessName = processTimeoutRequest.ProcessName
-				};
 
 				var props = _sendAndReplyChannel.CreateBasicProperties();
 				props.Type = MessageType.ProcessTimeoutResponse.GetDescription();

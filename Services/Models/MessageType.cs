@@ -3,7 +3,7 @@
 namespace Services.Models
 {
 	/// <summary>
-	/// Enum used to determine which code should be triggered in receiver
+	/// Enum used to determine which code should be triggered in receiver/sender
 	/// </summary>
 	public enum MessageType
 	{

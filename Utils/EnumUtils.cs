@@ -3,6 +3,9 @@ using System.Reflection;
 
 namespace Utils
 {
+	/// <summary>
+	/// Class to store useful functions for enums
+	/// </summary>
 	public static class EnumUtils
 	{
 		/// <summary>
@@ -34,7 +37,7 @@ namespace Utils
 		/// <param name="value">Enum value</param>
 		/// <returns>
 		/// Description of enum value - if exists
-		/// string.Empty - if mdescription is missing or empty</returns>
+		/// string.Empty - if description is missing or empty</returns>
 		public static string GetDescription<E>(this E value) where E : Enum => value.GetAttribute<E, DescriptionAttribute>()?.Description ?? string.Empty;
 
 		/// <summary>
@@ -58,9 +61,7 @@ namespace Utils
 			if (fieldInfo == null)
 				throw new ArgumentException($"Enum value: '{enumValue}' does not exists in current enum type: '{typeof(E)}'");
 
-			var customAttribute = fieldInfo.GetCustomAttribute<A>();
-
-			return customAttribute;
+			return fieldInfo.GetCustomAttribute<A>();
 		}
 
 		/// <summary>
@@ -76,18 +77,17 @@ namespace Utils
 			where E : struct, Enum
 		{
 			foreach (var fieldInfo in typeof(E).GetFields())
-			{
 				if (Attribute.GetCustomAttribute(fieldInfo, typeof(MenuDisplayNameAttribute)) is MenuDisplayNameAttribute attribute)
-				{
 					if (attribute.MenuDisplayName.Equals(menuDisplayName))
 						return (E?)fieldInfo.GetValue(null);
-				}
-			}
 
 			return null;
 		}
 	}
 
+	/// <summary>
+	/// Attribute to represent the name of configuration file
+	/// </summary>
 	[AttributeUsage(AttributeTargets.Field)]
 	public class ConfigurationNameAttribute : Attribute
 	{
@@ -99,6 +99,9 @@ namespace Utils
 		}
 	}
 
+	/// <summary>
+	/// Attribute to represent the name of menu item that is displayed in console
+	/// </summary>
 	[AttributeUsage(AttributeTargets.Field)]
 	public class MenuDisplayNameAttribute : Attribute
 	{

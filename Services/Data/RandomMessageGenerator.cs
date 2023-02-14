@@ -32,7 +32,7 @@ namespace Services.Data
 		/// <param name="minLength">Minimum length of text field</param>
 		/// <param name="maxLength">Maximum length of text field</param>
 		/// <returns></returns>
-		public List<SimpleMessage> GetRandomSimpleMessages(int n, int minLength = 1, int maxLength = 256)
+		public static List<SimpleMessage> GetRandomSimpleMessages(int n, int minLength = 1, int maxLength = 256)
 		{
 			var result = new List<SimpleMessage>();
 
@@ -89,7 +89,7 @@ namespace Services.Data
 		/// <param name="minLength">Minimum length of text</param>
 		/// <param name="maxLength">Maximum length of text</param>
 		/// <returns></returns>
-		private string GenerateRandomText(int minLength = 1, int maxLength = 256)
+		private static string GenerateRandomText(int minLength = 1, int maxLength = 256)
 		{
 			var result = string.Empty;
 			var random = new Random();
