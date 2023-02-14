@@ -4,6 +4,7 @@ using NServiceBus.Extensions.Logging;
 using NServiceBus.Logging;
 using NServiceBus.Transport;
 using Services.Contracts;
+using Services.Handlers;
 using Services.Models;
 using Utils;
 

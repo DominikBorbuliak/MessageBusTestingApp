@@ -2,6 +2,7 @@
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using Services.Contracts;
+using Services.Handlers;
 using Services.Mappers;
 using Services.Models;
 using System.Text;

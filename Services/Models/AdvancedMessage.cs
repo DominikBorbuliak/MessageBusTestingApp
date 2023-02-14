@@ -1,5 +1,4 @@
 ﻿using System.Text;
-using Utils;
 
 namespace Services.Models
 {
@@ -55,29 +54,5 @@ namespace Services.Models
 		public string PostalCode { get; set; } = string.Empty;
 
 		public string Country { get; set; } = string.Empty;
-	}
-
-	/// <summary>
-	/// Handler class to handle advanced message
-	/// </summary>
-	public static class AdvancedMessageHandler
-	{
-		/// <summary>
-		/// Handles advanced message
-		/// </summary>
-		/// <param name="advancedMessage">Message to handle</param>
-		/// <returns></returns>
-		public static bool Handle(AdvancedMessage? advancedMessage)
-		{
-			if (advancedMessage == null)
-			{
-				ConsoleUtils.WriteLineColor("AdvancedMessage could not be deserialized correctly!", ConsoleColor.Red);
-				return false;
-			}
-
-			ConsoleUtils.WriteLineColor($"Advanced messsage received:\n{advancedMessage}", ConsoleColor.Green);
-
-			return true;
-		}
 	}
 }
