@@ -71,7 +71,9 @@ namespace Services.Services
 			else if (arguments.Message.Subject.Equals(MessageType.AdvancedMessage.GetDescription()))
 			{
 				var advancedMessage = JsonSerializer.Deserialize<AdvancedMessage>(body);
-				ConsoleUtils.WriteLineColor($"Advanced messsage received:\n{advancedMessage}", ConsoleColor.Green);
+
+				if (!AdvancedMessageHandler.Handle(advancedMessage))
+					return;
 			}
 			else if (arguments.Message.Subject.Equals(MessageType.ExceptionMessage.GetDescription()))
 			{

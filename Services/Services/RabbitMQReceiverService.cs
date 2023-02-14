@@ -117,11 +117,23 @@ namespace Services.Services
 				if (arguments.BasicProperties.Type.Equals(MessageType.SimpleMessage.GetDescription()))
 				{
 					ConsoleUtils.WriteLineColor($"Simple messsage received: {body}", ConsoleColor.Green);
+
+					_sendOnlyChannel.BasicAck(
+						deliveryTag: arguments.DeliveryTag,
+						multiple: false
+					);
 				}
 				else if (arguments.BasicProperties.Type.Equals(MessageType.AdvancedMessage.GetDescription()))
 				{
 					var advancedMessage = JsonSerializer.Deserialize<AdvancedMessage>(body);
-					ConsoleUtils.WriteLineColor($"Advanced messsage received:\n{advancedMessage}", ConsoleColor.Green);
+
+					if (!AdvancedMessageHandler.Handle(advancedMessage))
+						return;
+
+					_sendOnlyChannel.BasicAck(
+						deliveryTag: arguments.DeliveryTag,
+						multiple: false
+					);
 				}
 				else if (arguments.BasicProperties.Type.Equals(MessageType.ExceptionMessage.GetDescription()))
 				{

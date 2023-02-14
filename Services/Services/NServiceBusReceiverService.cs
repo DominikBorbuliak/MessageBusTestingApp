@@ -106,7 +106,7 @@ namespace Services.Services
 		{
 			await Task.Run(() =>
 			{
-				ConsoleUtils.WriteLineColor($"Advanced messsage received: {message}", ConsoleColor.Green);
+				AdvancedMessageHandler.Handle(message);
 			}, context.CancellationToken);
 		}
 	}
