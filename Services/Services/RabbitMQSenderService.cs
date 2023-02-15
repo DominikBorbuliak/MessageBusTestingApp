@@ -178,7 +178,7 @@ namespace Services.Services
 		/// Handler method used for rectangular prism, process timeout  and exception responses
 		/// </summary>
 		/// <param name="arguments"></param>
-		private void ResponseHandler(BasicDeliverEventArgs arguments)
+		private static void ResponseHandler(BasicDeliverEventArgs arguments)
 		{
 			var body = Encoding.UTF8.GetString(arguments.Body.ToArray());
 
