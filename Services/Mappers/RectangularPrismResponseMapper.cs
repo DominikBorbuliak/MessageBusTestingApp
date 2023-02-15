@@ -14,8 +14,13 @@ namespace Services.Mappers
 		/// Formats RectangularPrismResponse to ServiceBusMessage
 		/// </summary>
 		/// <param name="rectangularPrismResponse"></param>
+		/// <param name="sessionId"></param>
 		/// <returns></returns>
-		public static ServiceBusMessage ToServiceBusMessage(this RectangularPrismResponse rectangularPrismResponse) => new(JsonSerializer.Serialize(rectangularPrismResponse));
+		public static ServiceBusMessage ToServiceBusMessage(this RectangularPrismResponse rectangularPrismResponse, string sessionId) => new(JsonSerializer.Serialize(rectangularPrismResponse))
+		{
+			SessionId = sessionId
+		};
+
 
 		/// <summary>
 		/// Formats RectangularPrismResponse to RabbitMQ message

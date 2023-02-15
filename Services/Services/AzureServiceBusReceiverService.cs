@@ -105,8 +105,7 @@ namespace Services.Services
 				if (rectangularPrismResponse == null)
 					return;
 
-				var response = rectangularPrismResponse.ToServiceBusMessage();
-				response.SessionId = arguments.SessionId;
+				var response = rectangularPrismResponse.ToServiceBusMessage(arguments.SessionId);
 
 				await _sendAndReplyServiceBusSender.SendMessageAsync(response);
 			}
@@ -118,8 +117,7 @@ namespace Services.Services
 				if (processTimeoutResponse == null)
 					return;
 
-				var response = processTimeoutResponse.ToServiceBusMessage();
-				response.SessionId = arguments.SessionId;
+				var response = processTimeoutResponse.ToServiceBusMessage(arguments.SessionId);
 
 				await _sendAndReplyServiceBusSender.SendMessageAsync(response);
 			}
