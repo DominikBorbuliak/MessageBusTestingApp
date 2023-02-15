@@ -14,8 +14,12 @@ namespace Services.Mappers
 		/// Formats ProcessTimeoutResponse to ServiceBusMessage
 		/// </summary>
 		/// <param name="processTimeoutResponse"></param>
+		/// <param name="sessionId"></param>
 		/// <returns></returns>
-		public static ServiceBusMessage ToServiceBusMessage(this ProcessTimeoutResponse processTimeoutResponse) => new(JsonSerializer.Serialize(processTimeoutResponse));
+		public static ServiceBusMessage ToServiceBusMessage(this ProcessTimeoutResponse processTimeoutResponse, string sessionId) => new(JsonSerializer.Serialize(processTimeoutResponse))
+		{
+			SessionId = sessionId
+		};
 
 		/// <summary>
 		/// Formats ProcessTimeoutResponse to RabbitMQ message

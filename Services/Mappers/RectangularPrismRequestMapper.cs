@@ -15,10 +15,12 @@ namespace Services.Mappers
 		/// Formats RectangularPrismRequest to ServiceBusMessage
 		/// </summary>
 		/// <param name="rectangularPrismRequest"></param>
+		/// <param name="sessionId"></param>
 		/// <returns></returns>
-		public static ServiceBusMessage ToServiceBusMessage(this RectangularPrismRequest rectangularPrismRequest) => new(JsonSerializer.Serialize(rectangularPrismRequest))
+		public static ServiceBusMessage ToServiceBusMessage(this RectangularPrismRequest rectangularPrismRequest, string sessionId) => new(JsonSerializer.Serialize(rectangularPrismRequest))
 		{
-			Subject = MessageType.RectangularPrismRequest.GetDescription()
+			Subject = MessageType.RectangularPrismRequest.GetDescription(),
+			SessionId = sessionId
 		};
 
 		/// <summary>

@@ -15,10 +15,12 @@ namespace Services.Mappers
 		/// Formats ProcessTimeoutRequest to ServiceBusMessage
 		/// </summary>
 		/// <param name="processTimeoutRequest"></param>
+		/// <param name="sessionId"></param>
 		/// <returns></returns>
-		public static ServiceBusMessage ToServiceBusMessage(this ProcessTimeoutRequest processTimeoutRequest) => new(JsonSerializer.Serialize(processTimeoutRequest))
+		public static ServiceBusMessage ToServiceBusMessage(this ProcessTimeoutRequest processTimeoutRequest, string sessionId) => new(JsonSerializer.Serialize(processTimeoutRequest))
 		{
-			Subject = MessageType.ProcessTimeoutRequest.GetDescription()
+			Subject = MessageType.ProcessTimeoutRequest.GetDescription(),
+			SessionId = sessionId
 		};
 
 		/// <summary>

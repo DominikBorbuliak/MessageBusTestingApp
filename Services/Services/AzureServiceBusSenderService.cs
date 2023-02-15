@@ -42,8 +42,7 @@ namespace Services.Services
 
 		public async Task SendAndReplyRectangularPrism(RectangularPrismRequest rectangularPrismRequest)
 		{
-			var serviceBusMessage = rectangularPrismRequest.ToServiceBusMessage();
-			serviceBusMessage.SessionId = _sendAndReplySessionId.ToString();
+			var serviceBusMessage = rectangularPrismRequest.ToServiceBusMessage(_sendAndReplySessionId.ToString());
 
 			await _sendAndReplyServiceBusSender.SendMessageAsync(serviceBusMessage);
 
@@ -68,8 +67,7 @@ namespace Services.Services
 			var processSesionId = Guid.NewGuid().ToString();
 			var processServiceBusReceiver = await _serviceBusClient.AcceptSessionAsync(_configuration.GetSection("ConnectionSettings")["SendAndReplySenderQueueName"], processSesionId);
 
-			var serviceBusMessage = processTimeoutRequest.ToServiceBusMessage();
-			serviceBusMessage.SessionId = processSesionId;
+			var serviceBusMessage = processTimeoutRequest.ToServiceBusMessage(processSesionId);
 
 			await _sendAndReplyServiceBusSender.SendMessageAsync(serviceBusMessage);
 
