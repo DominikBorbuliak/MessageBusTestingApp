@@ -2,6 +2,7 @@
 using Services.Models;
 using System.Text.Json;
 using System.Text;
+using Utils;
 
 namespace Services.Mappers
 {
@@ -18,6 +19,7 @@ namespace Services.Mappers
 		/// <returns></returns>
 		public static ServiceBusMessage ToServiceBusMessage(this ProcessTimeoutResponse processTimeoutResponse, string sessionId) => new(JsonSerializer.Serialize(processTimeoutResponse))
 		{
+			Subject = MessageType.ProcessTimeoutResponse.GetDescription(),
 			SessionId = sessionId
 		};
 

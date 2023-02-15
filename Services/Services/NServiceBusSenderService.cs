@@ -11,7 +11,7 @@ namespace Services.Services
 	public class NServiceBusSenderService : ISenderService
 	{
 		private readonly IEndpointInstance _sendOnlyEndpointInstance;
-		private readonly IEndpointInstance _sendAndReplyEndpointInstance;
+		private readonly IEndpointInstance _sendAndReplyNoWaitEndpointInstance;
 
 		public NServiceBusSenderService(IConfiguration configuration, bool isAzureServiceBus)
 		{
@@ -19,7 +19,7 @@ namespace Services.Services
 			LogManager.UseFactory(new ExtensionsLoggerFactory(new NLogLoggerFactory()));
 
 			var sendOnlyEndpointConfiguration = new EndpointConfiguration(configuration.GetSection("ConnectionSettings")["SendOnlySenderEndpointName"]);
-			var sendAndReplyEndpointConfiguration = new EndpointConfiguration(configuration.GetSection("ConnectionSettings")["SendAndReplySenderEndpointName"]);
+			var sendAndReplyNoWaitEndpointConfiguration = new EndpointConfiguration(configuration.GetSection("ConnectionSettings")["SendAndReplyNoWaitSenderEndpointName"]);
 
 			if (isAzureServiceBus)
 			{
@@ -31,10 +31,10 @@ namespace Services.Services
 				sendOnlyTransport.TopicName(configuration.GetSection("ConnectionSettings")["TopicName"]);
 				sendOnlyEndpointConfiguration.SendOnly();
 
-				var sendAndReplyTransport = sendAndReplyEndpointConfiguration.UseTransport<AzureServiceBusTransport>();
+				var sendAndReplyTransport = sendAndReplyNoWaitEndpointConfiguration.UseTransport<AzureServiceBusTransport>();
 				sendAndReplyTransport.ConnectionString(configuration.GetConnectionString("AzureServiceBus"));
-				sendAndReplyTransport.Routing().RouteToEndpoint(typeof(RectangularPrismRequest), configuration.GetSection("ConnectionSettings")["SendAndReplyReceiverEndpointName"]);
-				sendAndReplyTransport.Routing().RouteToEndpoint(typeof(ProcessTimeoutRequest), configuration.GetSection("ConnectionSettings")["SendAndReplyReceiverEndpointName"]);
+				sendAndReplyTransport.Routing().RouteToEndpoint(typeof(RectangularPrismRequest), configuration.GetSection("ConnectionSettings")["SendAndReplyNoWaitReceiverEndpointName"]);
+				sendAndReplyTransport.Routing().RouteToEndpoint(typeof(ProcessTimeoutRequest), configuration.GetSection("ConnectionSettings")["SendAndReplyNoWaitReceiverEndpointName"]);
 				sendAndReplyTransport.TopicName(configuration.GetSection("ConnectionSettings")["TopicName"]);
 			}
 			else
@@ -46,18 +46,18 @@ namespace Services.Services
 				sendOnlyTransport.Routing().RouteToEndpoint(typeof(AdvancedMessage), configuration.GetSection("ConnectionSettings")["SendOnlyReceiverEndpointName"]);
 				sendOnlyTransport.Routing().RouteToEndpoint(typeof(ExceptionMessage), configuration.GetSection("ConnectionSettings")["SendOnlyReceiverEndpointName"]);
 
-				var sendAndReplyTransport = sendAndReplyEndpointConfiguration.UseTransport<RabbitMQTransport>();
+				var sendAndReplyTransport = sendAndReplyNoWaitEndpointConfiguration.UseTransport<RabbitMQTransport>();
 				sendAndReplyTransport.UseConventionalRoutingTopology(QueueType.Quorum);
 				sendAndReplyTransport.ConnectionString($"host={configuration.GetSection("ConnectionSettings")["HostName"]}");
-				sendAndReplyTransport.Routing().RouteToEndpoint(typeof(RectangularPrismRequest), configuration.GetSection("ConnectionSettings")["SendAndReplyReceiverEndpointName"]);
-				sendAndReplyTransport.Routing().RouteToEndpoint(typeof(ProcessTimeoutRequest), configuration.GetSection("ConnectionSettings")["SendAndReplyReceiverEndpointName"]);
+				sendAndReplyTransport.Routing().RouteToEndpoint(typeof(RectangularPrismRequest), configuration.GetSection("ConnectionSettings")["SendAndReplyNoWaitReceiverEndpointName"]);
+				sendAndReplyTransport.Routing().RouteToEndpoint(typeof(ProcessTimeoutRequest), configuration.GetSection("ConnectionSettings")["SendAndReplyNoWaitReceiverEndpointName"]);
 			}
 
 			sendOnlyEndpointConfiguration.EnableInstallers();
-			sendAndReplyEndpointConfiguration.EnableInstallers();
+			sendAndReplyNoWaitEndpointConfiguration.EnableInstallers();
 
 			_sendOnlyEndpointInstance = Endpoint.Start(sendOnlyEndpointConfiguration).Result;
-			_sendAndReplyEndpointInstance = Endpoint.Start(sendAndReplyEndpointConfiguration).Result;
+			_sendAndReplyNoWaitEndpointInstance = Endpoint.Start(sendAndReplyNoWaitEndpointConfiguration).Result;
 		}
 
 		public async Task SendSimpleMessage(SimpleMessage simpleMessage) => await _sendOnlyEndpointInstance.Send(simpleMessage);
@@ -66,15 +66,33 @@ namespace Services.Services
 
 		public async Task SendExceptionMessage(ExceptionMessage exceptionMessage) => await _sendOnlyEndpointInstance.Send(exceptionMessage);
 
-		public async Task SendAndReplyRectangularPrism(RectangularPrismRequest rectangularPrismRequest) => await _sendAndReplyEndpointInstance.Send(rectangularPrismRequest);
+		public async Task SendAndReplyRectangularPrism(RectangularPrismRequest rectangularPrismRequest, bool wait)
+		{
+			if (wait)
+			{
+				ConsoleUtils.WriteLineColor("This feature is not implemented yet!", ConsoleColor.Yellow);
+				return;
+			}
 
-		public async Task SendAndReplyProcessTimeout(ProcessTimeoutRequest processTimeoutRequest) => await _sendAndReplyEndpointInstance.Send(processTimeoutRequest);
+			await _sendAndReplyNoWaitEndpointInstance.Send(rectangularPrismRequest);
+		}
+
+		public async Task SendAndReplyProcessTimeout(ProcessTimeoutRequest processTimeoutRequest, bool wait)
+		{
+			if (wait)
+			{
+				ConsoleUtils.WriteLineColor("This feature is not implemented yet!", ConsoleColor.Yellow);
+				return;
+			}
+
+			await _sendAndReplyNoWaitEndpointInstance.Send(processTimeoutRequest);
+		}
 
 		public async Task FinishJob()
 		{
 			await _sendOnlyEndpointInstance.Stop();
 
-			await _sendAndReplyEndpointInstance.Stop();
+			await _sendAndReplyNoWaitEndpointInstance.Stop();
 		}
 	}
 

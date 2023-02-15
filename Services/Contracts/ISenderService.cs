@@ -34,14 +34,14 @@ namespace Services.Contracts
 		/// </summary>
 		/// <param name="rectangularPrismRequest"></param>
 		/// <returns></returns>
-		Task SendAndReplyRectangularPrism(RectangularPrismRequest rectangularPrismRequest);
+		Task SendAndReplyRectangularPrism(RectangularPrismRequest rectangularPrismRequest, bool wait);
 
 		/// <summary>
 		/// Sends process timeout request and waits for response
 		/// </summary>
 		/// <param name="processTimeoutRequest"></param>
 		/// <returns></returns>
-		Task SendAndReplyProcessTimeout(ProcessTimeoutRequest processTimeoutRequest);
+		Task SendAndReplyProcessTimeout(ProcessTimeoutRequest processTimeoutRequest, bool wait);
 
 		/// <summary>
 		/// Closes everything that was opened due to sending of messages and clears memory

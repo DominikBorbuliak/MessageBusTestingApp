@@ -17,9 +17,9 @@ namespace Services.Mappers
 		/// <param name="rectangularPrismRequest"></param>
 		/// <param name="sessionId"></param>
 		/// <returns></returns>
-		public static ServiceBusMessage ToServiceBusMessage(this RectangularPrismRequest rectangularPrismRequest, string sessionId) => new(JsonSerializer.Serialize(rectangularPrismRequest))
+		public static ServiceBusMessage ToServiceBusMessage(this RectangularPrismRequest rectangularPrismRequest, string sessionId, bool wait) => new(JsonSerializer.Serialize(rectangularPrismRequest))
 		{
-			Subject = MessageType.RectangularPrismRequest.GetDescription(),
+			Subject = wait ? MessageType.RectangularPrismWaitRequest.GetDescription() : MessageType.RectangularPrismNoWaitRequest.GetDescription(),
 			SessionId = sessionId
 		};
 

@@ -17,9 +17,9 @@ namespace Services.Mappers
 		/// <param name="processTimeoutRequest"></param>
 		/// <param name="sessionId"></param>
 		/// <returns></returns>
-		public static ServiceBusMessage ToServiceBusMessage(this ProcessTimeoutRequest processTimeoutRequest, string sessionId) => new(JsonSerializer.Serialize(processTimeoutRequest))
+		public static ServiceBusMessage ToServiceBusMessage(this ProcessTimeoutRequest processTimeoutRequest, string sessionId, bool wait) => new(JsonSerializer.Serialize(processTimeoutRequest))
 		{
-			Subject = MessageType.ProcessTimeoutRequest.GetDescription(),
+			Subject = wait ? MessageType.ProcessTimeoutWaitRequest.GetDescription() : MessageType.ProcessTimeoutNoWaitRequest.GetDescription(),
 			SessionId = sessionId
 		};
 

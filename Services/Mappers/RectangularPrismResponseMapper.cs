@@ -2,6 +2,7 @@
 using Services.Models;
 using System.Text.Json;
 using System.Text;
+using Utils;
 
 namespace Services.Mappers
 {
@@ -18,6 +19,7 @@ namespace Services.Mappers
 		/// <returns></returns>
 		public static ServiceBusMessage ToServiceBusMessage(this RectangularPrismResponse rectangularPrismResponse, string sessionId) => new(JsonSerializer.Serialize(rectangularPrismResponse))
 		{
+			Subject = MessageType.RectangularPrismResponse.GetDescription(),
 			SessionId = sessionId
 		};
 
