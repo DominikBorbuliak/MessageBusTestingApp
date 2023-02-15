@@ -4,7 +4,7 @@ using Utils;
 namespace Services.View
 {
 	/// <summary>
-	/// Static class used to display intro console and setup console
+	/// Class used to display intro console and setup console
 	/// </summary>
 	public static class Setup
 	{

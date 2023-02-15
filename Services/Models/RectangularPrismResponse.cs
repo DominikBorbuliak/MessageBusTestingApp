@@ -3,11 +3,12 @@
 namespace Services.Models
 {
 	/// <summary>
-	/// Model used to simulate request that need to wait for response
+	/// Model used to simulate send and reply pattern and exception during processing
 	/// </summary>
 	public class RectangularPrismResponse : IMessage
 	{
 		public double SurfaceArea { get; set; }
+
 		public double Volume { get; set; }
 
 		public override string ToString()

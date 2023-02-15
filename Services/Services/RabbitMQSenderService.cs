@@ -2,6 +2,7 @@
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using Services.Contracts;
+using Services.Handlers;
 using Services.Mappers;
 using Services.Models;
 using System.Text;
@@ -17,8 +18,8 @@ namespace Services.Services
 
 		private readonly IModel _sendOnlyChannel;
 
-		private readonly IModel _sendAndReplyChannel;
-		private readonly EventingBasicConsumer _sendAndReplyConsumer;
+		private readonly IModel _sendAndReplyNoWaitChannel;
+		private readonly EventingBasicConsumer _sendAndReplyNoWaitConsumer;
 
 		public RabbitMQSenderService(IConfiguration configuration)
 		{
@@ -40,23 +41,23 @@ namespace Services.Services
 				arguments: null
 			);
 
-			_sendAndReplyChannel = _connection.CreateModel();
+			_sendAndReplyNoWaitChannel = _connection.CreateModel();
 
-			_sendAndReplyChannel.QueueDeclare(
-				queue: _configuration.GetSection("ConnectionSettings")["SendAndReplySenderQueueName"],
+			_sendAndReplyNoWaitChannel.QueueDeclare(
+				queue: _configuration.GetSection("ConnectionSettings")["SendAndReplyNoWaitSenderQueueName"],
 				durable: false,
 				exclusive: false,
 				autoDelete: false,
 				arguments: null
 			);
 
-			_sendAndReplyConsumer = new EventingBasicConsumer(_sendAndReplyChannel);
+			_sendAndReplyNoWaitConsumer = new EventingBasicConsumer(_sendAndReplyNoWaitChannel);
 
-			_sendAndReplyConsumer.Received += (_, ea) => ResponseHandler(ea);
+			_sendAndReplyNoWaitConsumer.Received += (_, ea) => ResponseHandler(ea);
 
-			_sendAndReplyChannel.BasicConsume(
-				consumer: _sendAndReplyConsumer,
-				queue: _configuration.GetSection("ConnectionSettings")["SendAndReplySenderQueueName"],
+			_sendAndReplyNoWaitChannel.BasicConsume(
+				consumer: _sendAndReplyNoWaitConsumer,
+				queue: _configuration.GetSection("ConnectionSettings")["SendAndReplyNoWaitSenderQueueName"],
 				autoAck: true
 			);
 		}
@@ -110,41 +111,53 @@ namespace Services.Services
 			});
 		}
 
-		public async Task SendAndReplyRectangularPrism(RectangularPrismRequest rectangularPrismRequest)
+		public async Task SendAndReplyRectangularPrism(RectangularPrismRequest rectangularPrismRequest, bool wait)
 		{
 			await Task.Run(() =>
 			{
-				var props = _sendAndReplyChannel.CreateBasicProperties();
+				if (wait)
+				{
+					ConsoleUtils.WriteLineColor("This feature is not possible in RabbitMQ!", ConsoleColor.Yellow);
+					return;
+				}
+
+				var props = _sendAndReplyNoWaitChannel.CreateBasicProperties();
 				var correlationId = Guid.NewGuid().ToString();
 
-				props.Type = MessageType.RectangularPrismRequest.GetDescription();
+				props.Type = MessageType.RectangularPrismNoWaitRequest.GetDescription();
 				props.CorrelationId = correlationId;
-				props.ReplyTo = _configuration.GetSection("ConnectionSettings")["SendAndReplySenderQueueName"];
+				props.ReplyTo = _configuration.GetSection("ConnectionSettings")["SendAndReplyNoWaitSenderQueueName"];
 				props.MessageId = Guid.NewGuid().ToString();
 
-				_sendAndReplyChannel.BasicPublish(
+				_sendAndReplyNoWaitChannel.BasicPublish(
 					exchange: "",
-					routingKey: "nativesendandreplyreceiver",
+					routingKey: "nativesendandreplynowaitreceiver",
 					basicProperties: props,
 					body: rectangularPrismRequest.ToRabbitMQMessage()
 				);
 			});
 		}
 
-		public async Task SendAndReplyProcessTimeout(ProcessTimeoutRequest processTimeoutRequest)
+		public async Task SendAndReplyProcessTimeout(ProcessTimeoutRequest processTimeoutRequest, bool wait)
 		{
 			await Task.Run(() =>
 			{
-				var props = _sendAndReplyChannel.CreateBasicProperties();
+				if (wait)
+				{
+					ConsoleUtils.WriteLineColor("This feature is not possible in RabbitMQ!", ConsoleColor.Yellow);
+					return;
+				}
+
+				var props = _sendAndReplyNoWaitChannel.CreateBasicProperties();
 				var correlationId = Guid.NewGuid().ToString();
 
-				props.Type = MessageType.ProcessTimeoutRequest.GetDescription();
+				props.Type = MessageType.ProcessTimeoutNoWaitRequest.GetDescription();
 				props.CorrelationId = correlationId;
-				props.ReplyTo = _configuration.GetSection("ConnectionSettings")["SendAndReplySenderQueueName"];
+				props.ReplyTo = _configuration.GetSection("ConnectionSettings")["SendAndReplyNoWaitSenderQueueName"];
 
-				_sendAndReplyChannel.BasicPublish(
+				_sendAndReplyNoWaitChannel.BasicPublish(
 					exchange: "",
-					routingKey: "nativesendandreplyreceiver",
+					routingKey: "nativesendandreplynowaitreceiver",
 					basicProperties: props,
 					body: processTimeoutRequest.ToRabbitMQMessage()
 				);
@@ -156,46 +169,36 @@ namespace Services.Services
 			await Task.Run(() =>
 			{
 				_sendOnlyChannel.Dispose();
-				_sendAndReplyChannel.Dispose();
+				_sendAndReplyNoWaitChannel.Dispose();
 				_connection.Dispose();
 			});
 		}
 
 		/// <summary>
-		/// Handler method used for rectangular prism and process timeout responses
+		/// Handler method used for rectangular prism, process timeout  and exception responses
 		/// </summary>
 		/// <param name="arguments"></param>
-		private static void ResponseHandler(BasicDeliverEventArgs arguments)
+		private void ResponseHandler(BasicDeliverEventArgs arguments)
 		{
 			var body = Encoding.UTF8.GetString(arguments.Body.ToArray());
 
 			if (arguments.BasicProperties.Type.Equals(MessageType.RectangularPrismResponse.GetDescription()))
 			{
-				var response = JsonSerializer.Deserialize<RectangularPrismResponse>(body);
-
-				if (response != null)
-					ConsoleUtils.WriteLineColor(response.ToString(), ConsoleColor.Green);
-				else
-					ConsoleUtils.WriteLineColor("No response found for: RectangularPrismResponse!", ConsoleColor.Red);
+				var rectangularPrismResponse = JsonSerializer.Deserialize<RectangularPrismResponse>(body);
+				RectangularPrismResponseHandler.Handle(rectangularPrismResponse);
 			}
 			else if (arguments.BasicProperties.Type.Equals(MessageType.ProcessTimeoutResponse.GetDescription()))
 			{
-				var response = JsonSerializer.Deserialize<ProcessTimeoutResponse>(body);
-
-				if (response != null)
-					ConsoleUtils.WriteLineColor($"Received process timeout response: {response.ProcessName}", ConsoleColor.Green);
-				else
-					ConsoleUtils.WriteLineColor("No response found for: ProcessTimeoutResponse!", ConsoleColor.Red);
+				var processTimeoutResponse = JsonSerializer.Deserialize<ProcessTimeoutResponse>(body);
+				ProcessTimeoutResponseHandler.Handle(processTimeoutResponse);
 			}
 			else if (arguments.BasicProperties.Type.Equals(MessageType.ExceptionResponse.GetDescription()))
 			{
-				var response = JsonSerializer.Deserialize<ExceptionResponse>(body);
-
-				if (response != null)
-					ConsoleUtils.WriteLineColor(response.Text, ConsoleColor.Red);
-				else
-					ConsoleUtils.WriteLineColor("No response found for: ExceptionResponse!", ConsoleColor.Red);
+				var exceptionResponse = JsonSerializer.Deserialize<ExceptionResponse>(body);
+				ExceptionResponseHandler.Handle(exceptionResponse);
 			}
+
+			// Auto ack enabled for _sendAndReplyNoWaitChannel so no need to ack
 		}
 	}
 }

@@ -14,7 +14,7 @@ namespace Services.Mappers
 		/// <summary>
 		/// Maps AdvancedMessage to ServiceBusMessage
 		/// </summary>
-		/// <param name="advancedMessage"></param>
+		/// <param name="advancedMessage">Advanced message to map</param>
 		/// <returns></returns>
 		public static ServiceBusMessage ToServiceBusMessage(this AdvancedMessage advancedMessage) => new(JsonSerializer.Serialize(advancedMessage))
 		{
@@ -24,7 +24,7 @@ namespace Services.Mappers
 		/// <summary>
 		/// Maps AdvancedMessage to RabbitMQ message
 		/// </summary>
-		/// <param name="advancedMessage"></param>
+		/// <param name="advancedMessage">Advanced message to map</param>
 		/// <returns></returns>
 		public static byte[] ToRabbitMQMessage(this AdvancedMessage advancedMessage) => Encoding.UTF8.GetBytes(JsonSerializer.Serialize(advancedMessage));
 	}

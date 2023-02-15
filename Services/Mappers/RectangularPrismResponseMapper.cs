@@ -1,7 +1,8 @@
 ﻿using Azure.Messaging.ServiceBus;
 using Services.Models;
-using System.Text.Json;
 using System.Text;
+using System.Text.Json;
+using Utils;
 
 namespace Services.Mappers
 {
@@ -11,21 +12,22 @@ namespace Services.Mappers
 	public static class RectangularPrismResponseMapper
 	{
 		/// <summary>
-		/// Formats RectangularPrismResponse to ServiceBusMessage
+		/// Maps RectangularPrismResponse to ServiceBusMessage
 		/// </summary>
-		/// <param name="rectangularPrismResponse"></param>
-		/// <param name="sessionId"></param>
+		/// <param name="rectangularPrismResponse">Rectangular prism response to map</param>
+		/// <param name="sessionId">Session id for current rectangular prism response</param>
 		/// <returns></returns>
 		public static ServiceBusMessage ToServiceBusMessage(this RectangularPrismResponse rectangularPrismResponse, string sessionId) => new(JsonSerializer.Serialize(rectangularPrismResponse))
 		{
+			Subject = MessageType.RectangularPrismResponse.GetDescription(),
 			SessionId = sessionId
 		};
 
 
 		/// <summary>
-		/// Formats RectangularPrismResponse to RabbitMQ message
+		/// Maps RectangularPrismResponse to RabbitMQ message
 		/// </summary>
-		/// <param name="rectangularPrismResponse"></param>
+		/// <param name="rectangularPrismResponse">Rectangular prism response to map</param>
 		/// <returns></returns>
 		public static byte[] ToRabbitMQMessage(this RectangularPrismResponse rectangularPrismResponse) => Encoding.UTF8.GetBytes(JsonSerializer.Serialize(rectangularPrismResponse));
 	}

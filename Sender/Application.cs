@@ -45,17 +45,26 @@ namespace Sender
 						case ActionType.SendOnlyNRandomAdvancedMessages:
 							await HandleSendOnlyNRandomAdvancedMessages();
 							break;
-						case ActionType.SendAndReplyRectangularPrism:
-							await HandleSendAndReplyRectangularPrism();
-							break;
-						case ActionType.SendAndReplySimulateNClients:
-							await HandleSendAndReplySimulateNClients();
-							break;
 						case ActionType.SendOnlySimulateException:
 							await HandleSendOnlySimulateException();
 							break;
-						case ActionType.SendAndReplySimulateException:
-							await HandleSendAndReplySimulateException();
+						case ActionType.SendAndReplyWaitRectangularPrism:
+							await HandleSendAndReplyRectangularPrism(true);
+							break;
+						case ActionType.SendAndReplyWaitSimulateNClients:
+							await HandleSendAndReplySimulateNClients(true);
+							break;
+						case ActionType.SendAndReplyWaitSimulateException:
+							await HandleSendAndReplySimulateException(true);
+							break;
+						case ActionType.SendAndReplyNoWaitRectangularPrism:
+							await HandleSendAndReplyRectangularPrism(false);
+							break;
+						case ActionType.SendAndReplyNoWaitSimulateNClients:
+							await HandleSendAndReplySimulateNClients(false);
+							break;
+						case ActionType.SendAndReplyNoWaitSimulateException:
+							await HandleSendAndReplySimulateException(false);
 							break;
 					}
 
@@ -125,7 +134,6 @@ namespace Sender
 		{
 			var n = ConsoleUtils.GetUserIntegerInput("Please enter the number of messages you want to send:");
 
-			RandomMessageGenerator messageGenerator = new RandomMessageGenerator();
 			var randomMessages = RandomMessageGenerator.GetRandomSimpleMessages(n);
 
 			foreach (var randomMessage in randomMessages)
@@ -148,44 +156,6 @@ namespace Sender
 		}
 
 		/// <summary>
-		/// Sends one message that requires response
-		/// </summary>
-		/// <returns></returns>
-		private async Task HandleSendAndReplyRectangularPrism()
-		{
-			var rectangularPrismRequest = new RectangularPrismRequest
-			{
-				EdgeA = ConsoleUtils.GetUserDoubleInput("Please enter the length of edge A:"),
-				EdgeB = ConsoleUtils.GetUserDoubleInput("Please enter the length of edge B:"),
-				EdgeC = ConsoleUtils.GetUserDoubleInput("Please enter the length of edge C:"),
-				SucceedOn = 1
-			};
-
-			await _senderService.SendAndReplyRectangularPrism(rectangularPrismRequest);
-		}
-
-		/// <summary>
-		/// Simulates N concurent clients
-		/// </summary>
-		/// <returns></returns>
-		private async Task HandleSendAndReplySimulateNClients()
-		{
-			var n = ConsoleUtils.GetUserIntegerInput("Please enter the number of clients you want to simulate:");
-
-			var processTimeoutRequests = new List<ProcessTimeoutRequest>();
-
-			// Requests must be created separately, as it takes some time to fill in the required information, so the simulation would not be accurate.
-			for (var i = 1; i <= n; i++)
-				processTimeoutRequests.Add(new ProcessTimeoutRequest
-				{
-					ProcessName = ConsoleUtils.GetUserTextInput($"Please enter the name of {i}. client:"),
-					MillisecondsTimeout = ConsoleUtils.GetUserIntegerInput("Please enter the timeout in miliseconds to simulate work:")
-				});
-
-			await Task.WhenAll(processTimeoutRequests.Select(processTimeoutRequest => _senderService.SendAndReplyProcessTimeout(processTimeoutRequest)));
-		}
-
-		/// <summary>
 		/// Simulates exception on receiver end - Send Only
 		/// </summary>
 		/// <returns></returns>
@@ -201,10 +171,48 @@ namespace Sender
 		}
 
 		/// <summary>
+		/// Sends one message that requires response
+		/// </summary>
+		/// <returns></returns>
+		private async Task HandleSendAndReplyRectangularPrism(bool wait)
+		{
+			var rectangularPrismRequest = new RectangularPrismRequest
+			{
+				EdgeA = ConsoleUtils.GetUserDoubleInput("Please enter the length of edge A:"),
+				EdgeB = ConsoleUtils.GetUserDoubleInput("Please enter the length of edge B:"),
+				EdgeC = ConsoleUtils.GetUserDoubleInput("Please enter the length of edge C:"),
+				SucceedOn = 1
+			};
+
+			await _senderService.SendAndReplyRectangularPrism(rectangularPrismRequest, wait);
+		}
+
+		/// <summary>
+		/// Simulates N concurent clients
+		/// </summary>
+		/// <returns></returns>
+		private async Task HandleSendAndReplySimulateNClients(bool wait)
+		{
+			var n = ConsoleUtils.GetUserIntegerInput("Please enter the number of clients you want to simulate:");
+
+			var processTimeoutRequests = new List<ProcessTimeoutRequest>();
+
+			// Requests must be created separately, as it takes some time to fill in the required information, so the simulation would not be accurate.
+			for (var i = 1; i <= n; i++)
+				processTimeoutRequests.Add(new ProcessTimeoutRequest
+				{
+					ProcessName = ConsoleUtils.GetUserTextInput($"Please enter the name of {i}. client:"),
+					MillisecondsTimeout = ConsoleUtils.GetUserIntegerInput("Please enter the timeout in miliseconds to simulate work:")
+				});
+
+			await Task.WhenAll(processTimeoutRequests.Select(processTimeoutRequest => _senderService.SendAndReplyProcessTimeout(processTimeoutRequest, wait)));
+		}
+
+		/// <summary>
 		/// Simulates exception on receiver end - Send & Reply
 		/// </summary>
 		/// <returns></returns>
-		private async Task HandleSendAndReplySimulateException()
+		private async Task HandleSendAndReplySimulateException(bool wait)
 		{
 			var rectangularPrismRequest = new RectangularPrismRequest
 			{
@@ -215,7 +223,7 @@ namespace Sender
 				ExceptionText = ConsoleUtils.GetUserTextInput("Please enter the text of the exception:")
 			};
 
-			await _senderService.SendAndReplyRectangularPrism(rectangularPrismRequest);
+			await _senderService.SendAndReplyRectangularPrism(rectangularPrismRequest, wait);
 		}
 	}
 }

@@ -21,7 +21,7 @@ namespace Services.Handlers
 				return null;
 			}
 
-			ConsoleUtils.WriteLineColor($"Received process timeout request: {processTimeoutRequest.ProcessName}. Waiting for: {processTimeoutRequest.MillisecondsTimeout}ms", ConsoleColor.Green);
+			ConsoleUtils.WriteLineColor($"Process timeout request received: {processTimeoutRequest.ProcessName}. Waiting for: {processTimeoutRequest.MillisecondsTimeout}ms", ConsoleColor.Green);
 			await Task.Delay(processTimeoutRequest.MillisecondsTimeout);
 			ConsoleUtils.WriteLineColor($"Sending process timeout response: {processTimeoutRequest.ProcessName}", ConsoleColor.Green);
 

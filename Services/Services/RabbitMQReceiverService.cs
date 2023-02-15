@@ -18,8 +18,8 @@ namespace Services.Services
 		private readonly IModel _sendOnlyChannel;
 		private readonly AsyncEventingBasicConsumer _sendOnlyConsumer;
 
-		private readonly IModel _sendAndReplyChannel;
-		private readonly AsyncEventingBasicConsumer _sendAndReplyConsumer;
+		private readonly IModel _sendAndReplyNoWaitChannel;
+		private readonly AsyncEventingBasicConsumer _sendAndReplyNoWaitConsumer;
 
 		/// <summary>
 		/// BasicDeliverEventArgs does not include delivery count property so we replace it with this property
@@ -56,18 +56,18 @@ namespace Services.Services
 
 			_sendOnlyConsumer = new AsyncEventingBasicConsumer(_sendOnlyChannel);
 
-			_sendAndReplyChannel = _connection.CreateModel();
+			_sendAndReplyNoWaitChannel = _connection.CreateModel();
 
-			_sendAndReplyChannel.QueueDeclare(
-				queue: configuration.GetSection("ConnectionSettings")["SendAndReplyReceiverQueueName"],
+			_sendAndReplyNoWaitChannel.QueueDeclare(
+				queue: configuration.GetSection("ConnectionSettings")["SendAndReplyNoWaitReceiverQueueName"],
 				durable: false,
 				exclusive: false,
 				autoDelete: false,
 				arguments: null
 			);
 
-			_sendAndReplyChannel.BasicQos(0, 3, false);
-			_sendAndReplyConsumer = new AsyncEventingBasicConsumer(_sendAndReplyChannel);
+			_sendAndReplyNoWaitChannel.BasicQos(0, 3, false);
+			_sendAndReplyNoWaitConsumer = new AsyncEventingBasicConsumer(_sendAndReplyNoWaitChannel);
 		}
 
 		public async Task StartJob()
@@ -82,12 +82,12 @@ namespace Services.Services
 					consumer: _sendOnlyConsumer
 				);
 
-				_sendAndReplyConsumer.Received += (_, eventArguments) => RequestHandler(eventArguments);
+				_sendAndReplyNoWaitConsumer.Received += (_, eventArguments) => RequestHandler(eventArguments);
 
-				_sendAndReplyChannel.BasicConsume(
-					queue: "nativesendandreplyreceiver",
+				_sendAndReplyNoWaitChannel.BasicConsume(
+					queue: "nativesendandreplynowaitreceiver",
 					autoAck: false,
-					consumer: _sendAndReplyConsumer
+					consumer: _sendAndReplyNoWaitConsumer
 				);
 			});
 		}
@@ -99,14 +99,14 @@ namespace Services.Services
 				_connection.Close();
 
 				_sendOnlyChannel.Dispose();
-				_sendAndReplyChannel.Dispose();
+				_sendAndReplyNoWaitChannel.Dispose();
 
 				_connection.Dispose();
 			});
 		}
 
 		/// <summary>
-		/// Handler method used for simple and advanced messages
+		/// Handler method used for simple, advanced and exception message
 		/// </summary>
 		/// <param name="arguments"></param>
 		/// <returns></returns>
@@ -129,13 +129,12 @@ namespace Services.Services
 				{
 					var advancedMessage = JsonSerializer.Deserialize<AdvancedMessage>(body);
 
-					if (!AdvancedMessageHandler.Handle(advancedMessage))
-						return;
-
-					_sendOnlyChannel.BasicAck(
-						deliveryTag: arguments.DeliveryTag,
-						multiple: false
-					);
+					// Ack message only if deserialization was correct
+					if (AdvancedMessageHandler.Handle(advancedMessage))
+						_sendOnlyChannel.BasicAck(
+							deliveryTag: arguments.DeliveryTag,
+							multiple: false
+						);
 				}
 				else if (arguments.BasicProperties.Type.Equals(MessageType.ExceptionMessage.GetDescription()))
 				{
@@ -152,17 +151,18 @@ namespace Services.Services
 						if (_maxNumberOfDeliveryCounts <= deliveryCount)
 							return;
 
-						if (!ExceptionMessageHandler.Handle(exceptionMessage, deliveryCount))
-							return;
-
-						_sendOnlyChannel.BasicAck(
-							deliveryTag: arguments.DeliveryTag,
-							multiple: false
-						);
+						// Ack message only if deserialization was correct
+						if (ExceptionMessageHandler.Handle(exceptionMessage, deliveryCount))
+							_sendOnlyChannel.BasicAck(
+								deliveryTag: arguments.DeliveryTag,
+								multiple: false
+							);
 					}
 					catch (Exception exception)
 					{
 						ConsoleUtils.WriteLineColor($"Exception occured: {exception.Message}", ConsoleColor.Red);
+
+						// RabbitMQ does not have built in error handling so we need to use nack to reque
 						_sendOnlyChannel.BasicNack(arguments.DeliveryTag, false, true);
 					}
 				}
@@ -178,7 +178,7 @@ namespace Services.Services
 		{
 			var body = Encoding.UTF8.GetString(arguments.Body.ToArray());
 
-			if (arguments.BasicProperties.Type.Equals(MessageType.RectangularPrismRequest.GetDescription()))
+			if (arguments.BasicProperties.Type.Equals(MessageType.RectangularPrismNoWaitRequest.GetDescription()))
 			{
 				try
 				{
@@ -192,10 +192,10 @@ namespace Services.Services
 
 					if (_maxNumberOfDeliveryCounts <= deliveryCount)
 					{
-						var exceptionResponseProps = _sendAndReplyChannel.CreateBasicProperties();
+						var exceptionResponseProps = _sendAndReplyNoWaitChannel.CreateBasicProperties();
 						exceptionResponseProps.Type = MessageType.ExceptionResponse.GetDescription();
 
-						_sendAndReplyChannel.BasicPublish(
+						_sendAndReplyNoWaitChannel.BasicPublish(
 							exchange: "",
 							routingKey: arguments.BasicProperties.ReplyTo,
 							mandatory: false,
@@ -203,7 +203,7 @@ namespace Services.Services
 							body: new ExceptionResponse { Text = "No response found for: RectangularPrismResponse!" }.ToRabbitMQMessage()
 						);
 
-						_sendAndReplyChannel.BasicAck(
+						_sendAndReplyNoWaitChannel.BasicAck(
 							deliveryTag: arguments.DeliveryTag,
 							multiple: false
 						);
@@ -212,13 +212,15 @@ namespace Services.Services
 					}
 
 					var rectangularPrismResponse = RectangularPrismRequestHandler.HandleAndGenerateResponse(rectangularPrismRequest, deliveryCount);
+
+					// Publish response and ack request only if deserialization was correct
 					if (rectangularPrismResponse == null)
 						return;
 
-					var props = _sendAndReplyChannel.CreateBasicProperties();
+					var props = _sendAndReplyNoWaitChannel.CreateBasicProperties();
 					props.Type = MessageType.RectangularPrismResponse.GetDescription();
 
-					_sendAndReplyChannel.BasicPublish(
+					_sendAndReplyNoWaitChannel.BasicPublish(
 						exchange: "",
 						routingKey: arguments.BasicProperties.ReplyTo,
 						mandatory: false,
@@ -226,7 +228,7 @@ namespace Services.Services
 						body: rectangularPrismResponse.ToRabbitMQMessage()
 					);
 
-					_sendAndReplyChannel.BasicAck(
+					_sendAndReplyNoWaitChannel.BasicAck(
 						deliveryTag: arguments.DeliveryTag,
 						multiple: false
 					);
@@ -234,21 +236,25 @@ namespace Services.Services
 				catch (Exception exception)
 				{
 					ConsoleUtils.WriteLineColor($"Exception occured: {exception.Message}", ConsoleColor.Red);
-					_sendAndReplyChannel.BasicNack(arguments.DeliveryTag, false, true);
+
+					// RabbitMQ does not have built in error handling so we need to use nack to reque
+					_sendAndReplyNoWaitChannel.BasicNack(arguments.DeliveryTag, false, true);
 				}
 			}
-			else if (arguments.BasicProperties.Type.Equals(MessageType.ProcessTimeoutRequest.GetDescription()))
+			else if (arguments.BasicProperties.Type.Equals(MessageType.ProcessTimeoutNoWaitRequest.GetDescription()))
 			{
 				var processTimeoutRequest = JsonSerializer.Deserialize<ProcessTimeoutRequest>(body);
 
 				var processTimeoutResponse = await ProcessTimeoutRequestHandler.HandleAndGenerateResponse(processTimeoutRequest);
+
+				// Publish response and ack request only if deserialization was correct
 				if (processTimeoutResponse == null)
 					return;
 
-				var props = _sendAndReplyChannel.CreateBasicProperties();
+				var props = _sendAndReplyNoWaitChannel.CreateBasicProperties();
 				props.Type = MessageType.ProcessTimeoutResponse.GetDescription();
 
-				_sendAndReplyChannel.BasicPublish(
+				_sendAndReplyNoWaitChannel.BasicPublish(
 					exchange: "",
 					routingKey: arguments.BasicProperties.ReplyTo,
 					mandatory: false,
@@ -256,7 +262,7 @@ namespace Services.Services
 					body: processTimeoutResponse.ToRabbitMQMessage()
 				);
 
-				_sendAndReplyChannel.BasicAck(
+				_sendAndReplyNoWaitChannel.BasicAck(
 					deliveryTag: arguments.DeliveryTag,
 					multiple: false
 				);

@@ -13,20 +13,26 @@ namespace Services.Models
 		[Description("AdvancedMessage")]
 		AdvancedMessage,
 
-		[Description("RectangularPrismRequest")]
-		RectangularPrismRequest,
+		[Description("ExceptionMessage")]
+		ExceptionMessage,
+
+		[Description("RectangularPrismWaitRequest")]
+		RectangularPrismWaitRequest,
+
+		[Description("ProcessTimeoutWaitRequest")]
+		ProcessTimeoutWaitRequest,
+
+		[Description("RectangularPrismNoWaitRequest")]
+		RectangularPrismNoWaitRequest,
+
+		[Description("ProcessTimeoutNoWaitRequest")]
+		ProcessTimeoutNoWaitRequest,
 
 		[Description("RectangularPrismResponse")]
 		RectangularPrismResponse,
 
-		[Description("ProcessTimeoutRequest")]
-		ProcessTimeoutRequest,
-
 		[Description("ProcessTimeoutResponse")]
 		ProcessTimeoutResponse,
-
-		[Description("ExceptionMessage")]
-		ExceptionMessage,
 
 		[Description("ExceptionResponse")]
 		ExceptionResponse

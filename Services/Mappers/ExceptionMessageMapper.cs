@@ -14,7 +14,7 @@ namespace Services.Mappers
 		/// <summary>
 		/// Maps ExceptionMessage to ServiceBusMessage
 		/// </summary>
-		/// <param name="exceptionMessage"></param>
+		/// <param name="exceptionMessage">Exception message to map</param>
 		/// <returns></returns>
 		public static ServiceBusMessage ToServiceBusMessage(this ExceptionMessage exceptionMessage) => new(JsonSerializer.Serialize(exceptionMessage))
 		{
@@ -24,7 +24,7 @@ namespace Services.Mappers
 		/// <summary>
 		/// Maps ExceptionMessage to RabbitMQ message
 		/// </summary>
-		/// <param name="exceptionMessage"></param>
+		/// <param name="exceptionMessage">Exception message to map</param>
 		/// <returns></returns>
 		public static byte[] ToRabbitMQMessage(this ExceptionMessage exceptionMessage) => Encoding.UTF8.GetBytes(JsonSerializer.Serialize(exceptionMessage));
 	}

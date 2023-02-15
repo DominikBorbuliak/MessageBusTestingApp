@@ -60,7 +60,7 @@ namespace Services.View
 		}
 
 		/// <summary>
-		/// Handles movement in menu with arrows
+		/// Handles movement in menu with up and down arrows
 		/// </summary>
 		/// <returns></returns>
 		public E? HandleMenuMovement()
@@ -79,9 +79,7 @@ namespace Services.View
 					_selectedItemId += _selectedItemId < 0 ? _menuItems.Count : 0;
 				}
 				else if (key == ConsoleKey.DownArrow)
-				{
 					_selectedItemId = (_selectedItemId + 1) % _menuItems.Count;
-				}
 			} while (key != ConsoleKey.Enter);
 
 			return EnumUtils.GetValueFromMenuDisplayName<E>(_menuItems[_selectedItemId]);

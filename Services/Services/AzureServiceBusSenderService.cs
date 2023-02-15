@@ -1,6 +1,7 @@
 ﻿using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Configuration;
 using Services.Contracts;
+using Services.Handlers;
 using Services.Mappers;
 using Services.Models;
 using System.Text.Json;
@@ -15,9 +16,10 @@ namespace Services.Services
 
 		private readonly ServiceBusSender _sendOnlyServiceBusSender;
 
-		private readonly ServiceBusSender _sendAndReplyServiceBusSender;
-		private readonly ServiceBusSessionReceiver _sendAndReplyServiceBusReceiver;
-		private readonly Guid _sendAndReplySessionId;
+		private readonly ServiceBusSender _sendAndReplyWaitServiceBusSender;
+
+		private readonly ServiceBusSender _sendAndReplyNoWaitServiceBusSender;
+		private readonly ServiceBusSessionProcessor _sendAndReplyNoWaitServiceBusProcessor;
 
 		public AzureServiceBusSenderService(IConfiguration configuration)
 		{
@@ -27,11 +29,15 @@ namespace Services.Services
 				TransportType = ServiceBusTransportType.AmqpWebSockets
 			});
 
-			_sendAndReplySessionId = Guid.NewGuid();
-
 			_sendOnlyServiceBusSender = _serviceBusClient.CreateSender(_configuration.GetSection("ConnectionSettings")["SendOnlyReceiverQueueName"]);
-			_sendAndReplyServiceBusSender = _serviceBusClient.CreateSender(_configuration.GetSection("ConnectionSettings")["SendAndReplyReceiverQueueName"]);
-			_sendAndReplyServiceBusReceiver = _serviceBusClient.AcceptSessionAsync(_configuration.GetSection("ConnectionSettings")["SendAndReplySenderQueueName"], _sendAndReplySessionId.ToString()).Result;
+
+			_sendAndReplyWaitServiceBusSender = _serviceBusClient.CreateSender(_configuration.GetSection("ConnectionSettings")["SendAndReplyWaitReceiverQueueName"]);
+
+			_sendAndReplyNoWaitServiceBusSender = _serviceBusClient.CreateSender(_configuration.GetSection("ConnectionSettings")["SendAndReplyNoWaitReceiverQueueName"]);
+			_sendAndReplyNoWaitServiceBusProcessor = _serviceBusClient.CreateSessionProcessor(_configuration.GetSection("ConnectionSettings")["SendAndReplyNoWaitSenderQueueName"]);
+			_sendAndReplyNoWaitServiceBusProcessor.ProcessMessageAsync += ResponseHandler;
+			_sendAndReplyNoWaitServiceBusProcessor.ProcessErrorAsync += ErrorHandler;
+			_sendAndReplyNoWaitServiceBusProcessor.StartProcessingAsync().Wait();
 		}
 
 		public async Task SendSimpleMessage(SimpleMessage simpleMessage) => await _sendOnlyServiceBusSender.SendMessageAsync(simpleMessage.ToServiceBusMessage());
@@ -40,54 +46,131 @@ namespace Services.Services
 
 		public async Task SendExceptionMessage(ExceptionMessage exceptionMessage) => await _sendOnlyServiceBusSender.SendMessageAsync(exceptionMessage.ToServiceBusMessage());
 
-		public async Task SendAndReplyRectangularPrism(RectangularPrismRequest rectangularPrismRequest)
+		public async Task SendAndReplyRectangularPrism(RectangularPrismRequest rectangularPrismRequest, bool wait)
 		{
-			var serviceBusMessage = rectangularPrismRequest.ToServiceBusMessage(_sendAndReplySessionId.ToString());
+			// Each request must have it's own session id to allow concurent processing
+			var sessionId = Guid.NewGuid().ToString();
+			var serviceBusMessage = rectangularPrismRequest.ToServiceBusMessage(sessionId, wait);
 
-			await _sendAndReplyServiceBusSender.SendMessageAsync(serviceBusMessage);
+			// Use different sender for Wait and No Wait
+			if (!wait)
+			{
+				await _sendAndReplyNoWaitServiceBusSender.SendMessageAsync(serviceBusMessage);
+				return;
+			}
 
-			var responseMessage = await _sendAndReplyServiceBusReceiver.ReceiveMessageAsync(TimeSpan.FromSeconds(10));
+			// Each request should have it's own receiver
+			var serviceBusReceiver = await _serviceBusClient.AcceptSessionAsync(_configuration.GetSection("ConnectionSettings")["SendAndReplyWaitSenderQueueName"], sessionId);
 
+			await _sendAndReplyWaitServiceBusSender.SendMessageAsync(serviceBusMessage);
+
+			var responseMessage = await serviceBusReceiver.ReceiveMessageAsync();
+
+			// If null is returned by receiver it means that request was not processed due to repeating exception or timeout
 			if (responseMessage == null)
 			{
 				ConsoleUtils.WriteLineColor("No response found for: RectangularPrismResponse!", ConsoleColor.Red);
 				return;
 			}
 
-			var response = JsonSerializer.Deserialize<RectangularPrismResponse>(responseMessage.Body);
+			var rectangularPrismResponse = JsonSerializer.Deserialize<RectangularPrismResponse>(responseMessage.Body);
 
-			if (response != null)
-				ConsoleUtils.WriteLineColor(response.ToString(), ConsoleColor.Green);
-			else
-				ConsoleUtils.WriteLineColor("Deserialization error: RectangularPrismResponse!", ConsoleColor.Red);
+			RectangularPrismResponseHandler.Handle(rectangularPrismResponse);
+
+			await serviceBusReceiver.DisposeAsync();
 		}
 
-		public async Task SendAndReplyProcessTimeout(ProcessTimeoutRequest processTimeoutRequest)
+		public async Task SendAndReplyProcessTimeout(ProcessTimeoutRequest processTimeoutRequest, bool wait)
 		{
+			// Each request must have it's own session id to allow concurent processing
 			var processSesionId = Guid.NewGuid().ToString();
-			var processServiceBusReceiver = await _serviceBusClient.AcceptSessionAsync(_configuration.GetSection("ConnectionSettings")["SendAndReplySenderQueueName"], processSesionId);
+			var serviceBusMessage = processTimeoutRequest.ToServiceBusMessage(processSesionId, wait);
 
-			var serviceBusMessage = processTimeoutRequest.ToServiceBusMessage(processSesionId);
+			// Use different sender for Wait and No Wait
+			if (!wait)
+			{
+				await _sendAndReplyNoWaitServiceBusSender.SendMessageAsync(serviceBusMessage);
+				return;
+			}
 
-			await _sendAndReplyServiceBusSender.SendMessageAsync(serviceBusMessage);
+			// Each request must have it's own receiver to allow concurent processing
+			var processServiceBusReceiver = await _serviceBusClient.AcceptSessionAsync(_configuration.GetSection("ConnectionSettings")["SendAndReplyWaitSenderQueueName"], processSesionId);
+
+			await _sendAndReplyWaitServiceBusSender.SendMessageAsync(serviceBusMessage);
 
 			var responseMessage = await processServiceBusReceiver.ReceiveMessageAsync();
-			var response = JsonSerializer.Deserialize<ProcessTimeoutResponse>(responseMessage.Body);
 
-			if (response != null)
-				ConsoleUtils.WriteLineColor($"Received process timeout response: {response.ProcessName}", ConsoleColor.Green);
-			else
-				ConsoleUtils.WriteLineColor("No response found for: ProcessTimeoutResponse!", ConsoleColor.Red);
+			// If null is returned by receiver it means that request was not processed due to repeating exception or timeout
+			if (responseMessage == null)
+			{
+				ConsoleUtils.WriteLineColor("No response found for: RectangularPrismResponse!", ConsoleColor.Red);
+				return;
+			}
+
+			var processTimeoutResponse = JsonSerializer.Deserialize<ProcessTimeoutResponse>(responseMessage.Body);
+
+			ProcessTimeoutResponseHandler.Handle(processTimeoutResponse);
+
+			await processServiceBusReceiver.DisposeAsync();
 		}
 
 		public async Task FinishJob()
 		{
 			await _sendOnlyServiceBusSender.DisposeAsync();
 
-			await _sendAndReplyServiceBusSender.DisposeAsync();
-			await _sendAndReplyServiceBusReceiver.DisposeAsync();
+			await _sendAndReplyWaitServiceBusSender.DisposeAsync();
+
+			await _sendAndReplyNoWaitServiceBusSender.DisposeAsync();
+
+			await _sendAndReplyNoWaitServiceBusProcessor.StopProcessingAsync();
+			await _sendAndReplyNoWaitServiceBusProcessor.DisposeAsync();
 
 			await _serviceBusClient.DisposeAsync();
+		}
+
+		/// <summary>
+		/// Response handler used to process rectangular prism response, process timeout response and exception response - No Wait
+		/// </summary>
+		/// <param name="arguments"></param>
+		/// <returns></returns>
+		private async Task ResponseHandler(ProcessSessionMessageEventArgs arguments)
+		{
+			var body = arguments.Message.Body.ToString();
+
+			var deserializedCorrectly = false;
+
+			if (arguments.Message.Subject.Equals(MessageType.RectangularPrismResponse.GetDescription()))
+			{
+				var rectangularPrismResponse = JsonSerializer.Deserialize<RectangularPrismResponse>(body);
+				deserializedCorrectly = RectangularPrismResponseHandler.Handle(rectangularPrismResponse);
+			}
+			else if (arguments.Message.Subject.Equals(MessageType.ProcessTimeoutResponse.GetDescription()))
+			{
+				var processTimeoutResponse = JsonSerializer.Deserialize<ProcessTimeoutResponse>(body);
+				deserializedCorrectly = ProcessTimeoutResponseHandler.Handle(processTimeoutResponse);
+			}
+			else if (arguments.Message.Subject.Equals(MessageType.ExceptionResponse.GetDescription()))
+			{
+				var exceptionResponse = JsonSerializer.Deserialize<ExceptionResponse>(body);
+				deserializedCorrectly = ExceptionResponseHandler.Handle(exceptionResponse);
+			}
+
+			// Complete message only if deserialization succeeded
+			if (deserializedCorrectly)
+				await arguments.CompleteMessageAsync(arguments.Message);
+		}
+
+		/// <summary>
+		/// Error handler which is trigerred when exception is thrown
+		/// </summary>
+		/// <param name="args"></param>
+		/// <returns></returns>
+		private async Task ErrorHandler(ProcessErrorEventArgs args)
+		{
+			await Task.Run(() =>
+			{
+				ConsoleUtils.WriteLineColor($"Exception occured: {args.Exception.Message}", ConsoleColor.Red);
+			});
 		}
 	}
 }

@@ -9,7 +9,7 @@ namespace Services.Handlers
 	public static class RectangularPrismRequestHandler
 	{
 		/// <summary>
-		/// Handles rectangular prism requests and generates response
+		/// Handles rectangular prism request and generates response
 		/// Throws exception if simulating error
 		/// </summary>
 		/// <param name="rectangularPrismRequest">Request to handle</param>

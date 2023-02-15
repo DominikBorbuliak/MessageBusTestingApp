@@ -22,7 +22,6 @@ namespace Services.Handlers
 			}
 
 			ConsoleUtils.WriteLineColor($"Advanced messsage received:\n{advancedMessage}", ConsoleColor.Green);
-
 			return true;
 		}
 	}

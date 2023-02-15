@@ -15,8 +15,8 @@ namespace Services.Services
 		private readonly EndpointConfiguration _sendOnlyEndpointConfiguration;
 		private IEndpointInstance _sendOnlyEndpointInstance = null!;
 
-		private readonly EndpointConfiguration _sendAndReplyEndpointConfiguration;
-		private IEndpointInstance _sendAndReplyEndpointInstance = null!;
+		private readonly EndpointConfiguration _sendAndReplyNoWaitEndpointConfiguration;
+		private IEndpointInstance _sendAndReplyNoWaitEndpointInstance = null!;
 
 		public NServiceBusReceiverService(IConfiguration configuration, bool isAzureServiceBus)
 		{
@@ -24,7 +24,7 @@ namespace Services.Services
 			LogManager.UseFactory(new ExtensionsLoggerFactory(new NLogLoggerFactory()));
 
 			_sendOnlyEndpointConfiguration = new EndpointConfiguration(configuration.GetSection("ConnectionSettings")["SendOnlyReceiverEndpointName"]);
-			_sendAndReplyEndpointConfiguration = new EndpointConfiguration(configuration.GetSection("ConnectionSettings")["SendAndReplyReceiverEndpointName"]);
+			_sendAndReplyNoWaitEndpointConfiguration = new EndpointConfiguration(configuration.GetSection("ConnectionSettings")["SendAndReplyNoWaitReceiverEndpointName"]);
 
 			if (isAzureServiceBus)
 			{
@@ -32,7 +32,7 @@ namespace Services.Services
 				sendOnlyTransport.ConnectionString(configuration.GetConnectionString("AzureServiceBus"));
 				sendOnlyTransport.TopicName(configuration.GetSection("ConnectionSettings")["TopicName"]);
 
-				var sendAndReplyTransport = _sendAndReplyEndpointConfiguration.UseTransport<AzureServiceBusTransport>();
+				var sendAndReplyTransport = _sendAndReplyNoWaitEndpointConfiguration.UseTransport<AzureServiceBusTransport>();
 				sendAndReplyTransport.ConnectionString(configuration.GetConnectionString("AzureServiceBus"));
 				sendAndReplyTransport.TopicName(configuration.GetSection("ConnectionSettings")["TopicName"]);
 			}
@@ -42,7 +42,7 @@ namespace Services.Services
 				sendOnlyTransport.UseConventionalRoutingTopology(QueueType.Quorum);
 				sendOnlyTransport.ConnectionString($"host={configuration.GetSection("ConnectionSettings")["HostName"]}");
 
-				var sendAndReplyTransport = _sendAndReplyEndpointConfiguration.UseTransport<RabbitMQTransport>();
+				var sendAndReplyTransport = _sendAndReplyNoWaitEndpointConfiguration.UseTransport<RabbitMQTransport>();
 				sendAndReplyTransport.UseConventionalRoutingTopology(QueueType.Quorum);
 				sendAndReplyTransport.ConnectionString($"host={configuration.GetSection("ConnectionSettings")["HostName"]}");
 			}
@@ -50,30 +50,25 @@ namespace Services.Services
 			var recoverability = _sendOnlyEndpointConfiguration.Recoverability();
 			recoverability.CustomPolicy(ErrorHandler);
 
-			var recoverabilitSendAndReply = _sendAndReplyEndpointConfiguration.Recoverability();
+			var recoverabilitSendAndReply = _sendAndReplyNoWaitEndpointConfiguration.Recoverability();
 			recoverabilitSendAndReply.CustomPolicy(ErrorHandler);
 
 			_sendOnlyEndpointConfiguration.EnableInstallers();
-			_sendAndReplyEndpointConfiguration.EnableInstallers();
+			_sendAndReplyNoWaitEndpointConfiguration.EnableInstallers();
 		}
 
 		public async Task StartJob()
 		{
-			_sendOnlyEndpointConfiguration.ExecuteTheseHandlersFirst(typeof(NServiceBusSimpleMessageHandler));
-			_sendOnlyEndpointConfiguration.ExecuteTheseHandlersFirst(typeof(NServiceBusAdvancedMessageHandler));
-
 			_sendOnlyEndpointInstance = await Endpoint.Start(_sendOnlyEndpointConfiguration);
 
-			_sendAndReplyEndpointConfiguration.ExecuteTheseHandlersFirst(typeof(NServiceBusRectangularPrismRequestHandler));
-
-			_sendAndReplyEndpointInstance = await Endpoint.Start(_sendAndReplyEndpointConfiguration);
+			_sendAndReplyNoWaitEndpointInstance = await Endpoint.Start(_sendAndReplyNoWaitEndpointConfiguration);
 		}
 
 		public async Task FinishJob()
 		{
 			await _sendOnlyEndpointInstance.Stop();
 
-			await _sendAndReplyEndpointInstance.Stop();
+			await _sendAndReplyNoWaitEndpointInstance.Stop();
 		}
 
 		private RecoverabilityAction ErrorHandler(RecoverabilityConfig config, ErrorContext context)
@@ -177,10 +172,10 @@ namespace Services.Services
 			}
 
 			var rectangularPrismResponse = RectangularPrismRequestHandler.HandleAndGenerateResponse(rectangularPrismRequest, deliveryCount);
-			if (rectangularPrismResponse == null)
-				return;
 
-			await context.Reply(rectangularPrismResponse);
+			// Reply only if deserialization was correct
+			if (rectangularPrismResponse != null)
+				await context.Reply(rectangularPrismResponse);
 		}
 	}
 
@@ -192,10 +187,10 @@ namespace Services.Services
 		public async Task Handle(ProcessTimeoutRequest processTimeoutRequest, IMessageHandlerContext context)
 		{
 			var processTimeoutResponse = await ProcessTimeoutRequestHandler.HandleAndGenerateResponse(processTimeoutRequest);
-			if (processTimeoutResponse == null)
-				return;
 
-			await context.Reply(processTimeoutResponse);
+			// Reply only if deserialization was correct
+			if (processTimeoutResponse != null)
+				await context.Reply(processTimeoutResponse);
 		}
 	}
 }

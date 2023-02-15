@@ -31,7 +31,6 @@ namespace Services.Handlers
 			}
 
 			ConsoleUtils.WriteLineColor($"Exception messsage with text: {exceptionMessage.ExceptionText} succeeded!", ConsoleColor.Green);
-
 			return true;
 		}
 	}

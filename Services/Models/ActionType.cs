@@ -3,7 +3,7 @@
 namespace Services.Models
 {
 	/// <summary>
-	/// Enum used to determine send action
+	/// Enum used to determine send action and to display menu
 	/// </summary>
 	public enum ActionType
 	{
@@ -22,13 +22,22 @@ namespace Services.Models
 		[MenuDisplayName("Send Only - Simulate Exception Thrown in Receiver")]
 		SendOnlySimulateException,
 
-		[MenuDisplayName("Send & Reply - Surface area and Volume of Rectangular Prism")]
-		SendAndReplyRectangularPrism,
+		[MenuDisplayName("Send & Reply - Wait - Surface area and Volume of Rectangular Prism")]
+		SendAndReplyWaitRectangularPrism,
 
-		[MenuDisplayName("Send & Reply - Simulate N Clients")]
-		SendAndReplySimulateNClients,
+		[MenuDisplayName("Send & Reply - Wait - Simulate N Clients")]
+		SendAndReplyWaitSimulateNClients,
 
-		[MenuDisplayName("Send & Reply - Simulate Exception Thrown in Receiver")]
-		SendAndReplySimulateException
+		[MenuDisplayName("Send & Reply - Wait - Simulate Exception Thrown in Receiver")]
+		SendAndReplyWaitSimulateException,
+
+		[MenuDisplayName("Send & Reply - No Wait - Surface area and Volume of Rectangular Prism ")]
+		SendAndReplyNoWaitRectangularPrism,
+
+		[MenuDisplayName("Send & Reply - No Wait - Simulate N Clients")]
+		SendAndReplyNoWaitSimulateNClients,
+
+		[MenuDisplayName("Send & Reply - No Wait - Simulate Exception Thrown in Receiver")]
+		SendAndReplyNoWaitSimulateException,
 	}
 }

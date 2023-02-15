@@ -12,21 +12,22 @@ namespace Services.Mappers
 	public static class ProcessTimeoutRequestMapper
 	{
 		/// <summary>
-		/// Formats ProcessTimeoutRequest to ServiceBusMessage
+		/// Maps ProcessTimeoutRequest to ServiceBusMessage
 		/// </summary>
-		/// <param name="processTimeoutRequest"></param>
-		/// <param name="sessionId"></param>
+		/// <param name="processTimeoutRequest">Process timeout request to map</param>
+		/// <param name="sessionId">Session id for current process timeout request</param>
+		/// <param name="wait">Determines whether it is request to which sender must wait</param>
 		/// <returns></returns>
-		public static ServiceBusMessage ToServiceBusMessage(this ProcessTimeoutRequest processTimeoutRequest, string sessionId) => new(JsonSerializer.Serialize(processTimeoutRequest))
+		public static ServiceBusMessage ToServiceBusMessage(this ProcessTimeoutRequest processTimeoutRequest, string sessionId, bool wait) => new(JsonSerializer.Serialize(processTimeoutRequest))
 		{
-			Subject = MessageType.ProcessTimeoutRequest.GetDescription(),
+			Subject = wait ? MessageType.ProcessTimeoutWaitRequest.GetDescription() : MessageType.ProcessTimeoutNoWaitRequest.GetDescription(),
 			SessionId = sessionId
 		};
 
 		/// <summary>
-		/// Formats ProcessTimeoutRequest to RabbitMQ message
+		/// Maps ProcessTimeoutRequest to RabbitMQ message
 		/// </summary>
-		/// <param name="processTimeoutRequest"></param>
+		/// <param name="processTimeoutRequest">Process timeout request to map</param>
 		/// <returns></returns>
 		public static byte[] ToRabbitMQMessage(this ProcessTimeoutRequest processTimeoutRequest) => Encoding.UTF8.GetBytes(JsonSerializer.Serialize(processTimeoutRequest));
 	}
