@@ -21,6 +21,9 @@ namespace Services.Services
 		private readonly ServiceBusSessionProcessor _sendAndReplyNoWaitServiceBusProcessor;
 		private readonly ServiceBusSender _sendAndReplyNoWaitServiceBusSender;
 
+		/// <summary>
+		/// Used to simulate simple error handling for no wait pattern
+		/// </summary>
 		private readonly int _maxRetries = 10;
 
 		public AzureServiceBusReceiverService(IConfiguration configuration)
@@ -35,8 +38,8 @@ namespace Services.Services
 			});
 
 			_sendOnlyServiceBusProcessor = _serviceBusClient.CreateProcessor(configuration.GetSection("ConnectionSettings")["SendOnlyReceiverQueueName"], new ServiceBusProcessorOptions());
-			_sendAndReplyWaitServiceBusProcessor = _serviceBusClient.CreateSessionProcessor(configuration.GetSection("ConnectionSettings")["SendAndReplyWaitReceiverQueueName"], new ServiceBusSessionProcessorOptions());
 
+			_sendAndReplyWaitServiceBusProcessor = _serviceBusClient.CreateSessionProcessor(configuration.GetSection("ConnectionSettings")["SendAndReplyWaitReceiverQueueName"], new ServiceBusSessionProcessorOptions());
 			_sendAndReplyWaitServiceBusSender = _serviceBusClient.CreateSender(configuration.GetSection("ConnectionSettings")["SendAndReplyWaitSenderQueueName"]);
 
 			_sendAndReplyNoWaitServiceBusSender = _serviceBusClient.CreateSender(configuration.GetSection("ConnectionSettings")["SendAndReplyNoWaitSenderQueueName"]);
@@ -65,17 +68,20 @@ namespace Services.Services
 		{
 			await _sendOnlyServiceBusProcessor.StopProcessingAsync();
 			await _sendAndReplyWaitServiceBusProcessor.StopProcessingAsync();
+			await _sendAndReplyNoWaitServiceBusProcessor.StopProcessingAsync();
 
 			await _sendOnlyServiceBusProcessor.DisposeAsync();
 			await _sendAndReplyWaitServiceBusProcessor.DisposeAsync();
+			await _sendAndReplyNoWaitServiceBusProcessor.DisposeAsync();
 
 			await _sendAndReplyWaitServiceBusSender.DisposeAsync();
+			await _sendAndReplyNoWaitServiceBusSender.DisposeAsync();
 
 			await _serviceBusClient.DisposeAsync();
 		}
 
 		/// <summary>
-		/// Message handler used to process simple and advanced message
+		/// Message handler used to process simple, advanced message and exception
 		/// </summary>
 		/// <param name="arguments"></param>
 		/// <returns></returns>
@@ -83,30 +89,32 @@ namespace Services.Services
 		{
 			var body = arguments.Message.Body.ToString();
 
+			var deserializedCorrectly = false;
+
 			if (arguments.Message.Subject.Equals(MessageType.SimpleMessage.GetDescription()))
 			{
 				ConsoleUtils.WriteLineColor($"Simple messsage received: {body}", ConsoleColor.Green);
+				deserializedCorrectly = true;
 			}
 			else if (arguments.Message.Subject.Equals(MessageType.AdvancedMessage.GetDescription()))
 			{
 				var advancedMessage = JsonSerializer.Deserialize<AdvancedMessage>(body);
-
-				if (!AdvancedMessageHandler.Handle(advancedMessage))
-					return;
+				deserializedCorrectly = AdvancedMessageHandler.Handle(advancedMessage);
 			}
 			else if (arguments.Message.Subject.Equals(MessageType.ExceptionMessage.GetDescription()))
 			{
 				var exceptionMessage = JsonSerializer.Deserialize<ExceptionMessage>(body);
-
-				if (!ExceptionMessageHandler.Handle(exceptionMessage, arguments.Message.DeliveryCount))
-					return;
+				deserializedCorrectly = ExceptionMessageHandler.Handle(exceptionMessage, arguments.Message.DeliveryCount);
 			}
 
-			await arguments.CompleteMessageAsync(arguments.Message);
+			// Complete message only if deserialization succeeded
+			if (deserializedCorrectly)
+				await arguments.CompleteMessageAsync(arguments.Message);
 		}
 
 		/// <summary>
 		/// Request handler used to process rectangular prism request and process timeout request
+		/// Used for Wait and No Wait
 		/// </summary>
 		/// <param name="arguments"></param>
 		/// <returns></returns>
@@ -126,17 +134,21 @@ namespace Services.Services
 				}
 				catch
 				{
+					// Simulate simple error handling in No Wait
 					if (arguments.Message.Subject.Equals(MessageType.RectangularPrismNoWaitRequest.GetDescription()) && _maxRetries == arguments.Message.DeliveryCount)
 						await _sendAndReplyNoWaitServiceBusSender.SendMessageAsync(new ExceptionResponse { Text = "No response found for: RectangularPrismResponse!" }.ToServiceBusMessage(arguments.SessionId));
 
+					// Error must be thrown in all cases to trigger error handler
 					throw;
 				}
 
+				// Do not complete message if deserialization was not correct
 				if (rectangularPrismResponse == null)
 					return;
 
 				var response = rectangularPrismResponse.ToServiceBusMessage(arguments.SessionId);
 
+				// Use different sender for Wait and No Wait
 				if (arguments.Message.Subject.Equals(MessageType.RectangularPrismWaitRequest.GetDescription()))
 					await _sendAndReplyWaitServiceBusSender.SendMessageAsync(response);
 				else
@@ -147,11 +159,14 @@ namespace Services.Services
 				var processTimeoutRequest = JsonSerializer.Deserialize<ProcessTimeoutRequest>(body);
 
 				var processTimeoutResponse = await ProcessTimeoutRequestHandler.HandleAndGenerateResponse(processTimeoutRequest);
+
+				// Do not complete message if deserialization was not correct
 				if (processTimeoutResponse == null)
 					return;
 
 				var response = processTimeoutResponse.ToServiceBusMessage(arguments.SessionId);
 
+				// Use different sender for Wait and No Wait
 				if (arguments.Message.Subject.Equals(MessageType.ProcessTimeoutWaitRequest.GetDescription()))
 					await _sendAndReplyWaitServiceBusSender.SendMessageAsync(response);
 				else

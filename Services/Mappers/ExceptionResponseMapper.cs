@@ -12,10 +12,10 @@ namespace Services.Mappers
 	public static class ExceptionResponseMapper
 	{
 		/// <summary>
-		/// Formats ExceptionResponse to ServiceBusMessage
+		/// Maps ExceptionResponse to ServiceBusMessage
 		/// </summary>
-		/// <param name="exceptionResponse"></param>
-		/// <param name="sessionId"></param>
+		/// <param name="exceptionResponse">Exception response to map</param>
+		/// <param name="sessionId">Session id for current exception response</param>
 		/// <returns></returns>
 		public static ServiceBusMessage ToServiceBusMessage(this ExceptionResponse exceptionResponse, string sessionId) => new(JsonSerializer.Serialize(exceptionResponse))
 		{
@@ -24,9 +24,9 @@ namespace Services.Mappers
 		};
 
 		/// <summary>
-		/// Formats ExceptionResponse to RabbitMQ message
+		/// Maps ExceptionResponse to RabbitMQ message
 		/// </summary>
-		/// <param name="exceptionResponse"></param>
+		/// <param name="exceptionResponse">Exception response to map</param>
 		/// <returns></returns>
 		public static byte[] ToRabbitMQMessage(this ExceptionResponse exceptionResponse) => Encoding.UTF8.GetBytes(JsonSerializer.Serialize(exceptionResponse));
 	}

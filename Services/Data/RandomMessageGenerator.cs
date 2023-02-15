@@ -26,7 +26,7 @@ namespace Services.Data
 		}
 
 		/// <summary>
-		/// Returns random simple messages
+		/// Returns N random simple messages
 		/// </summary>
 		/// <param name="n">Number of messages to return</param>
 		/// <param name="minLength">Minimum length of text field</param>
@@ -46,7 +46,7 @@ namespace Services.Data
 		}
 
 		/// <summary>
-		/// Returns random advanced messages
+		/// Returns N random advanced messages
 		/// </summary>
 		/// <param name="n">Number of messages to return</param>
 		/// <returns></returns>
@@ -105,7 +105,7 @@ namespace Services.Data
 		}
 
 		/// <summary>
-		/// Gets random addresses
+		/// Gets N random addresses
 		/// If Random API fails, generate addresses with random texts
 		/// </summary>
 		/// <param name="n">Number of addresses to return</param>
@@ -131,7 +131,6 @@ namespace Services.Data
 				var result = new List<RandomAddressAPI>();
 
 				for (var i = 0; i < n; i++)
-				{
 					result.Add(new RandomAddressAPI
 					{
 						StreetName = GenerateRandomText(),
@@ -140,7 +139,6 @@ namespace Services.Data
 						PostalCode = GenerateRandomText(),
 						Country = GenerateRandomText()
 					});
-				}
 
 				return result;
 			}
@@ -148,7 +146,7 @@ namespace Services.Data
 		}
 
 		/// <summary>
-		/// Gets random users
+		/// Gets N random users
 		/// If Random API fails, generate users with random texts
 		/// </summary>
 		/// <param name="n">Number of users to return</param>
@@ -174,14 +172,12 @@ namespace Services.Data
 				var result = new List<RandomUserAPI>();
 
 				for (var i = 0; i < n; i++)
-				{
 					result.Add(new RandomUserAPI
 					{
 						Name = GenerateRandomText(1, 51),
 						Surname = GenerateRandomText(1, 51),
 						Email = GenerateRandomText(1, 101)
 					});
-				}
 
 				return result;
 			}

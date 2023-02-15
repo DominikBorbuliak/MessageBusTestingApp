@@ -1,7 +1,7 @@
 ﻿using Azure.Messaging.ServiceBus;
 using Services.Models;
-using System.Text.Json;
 using System.Text;
+using System.Text.Json;
 using Utils;
 
 namespace Services.Mappers
@@ -12,10 +12,10 @@ namespace Services.Mappers
 	public static class ProcessTimeoutResponseMapper
 	{
 		/// <summary>
-		/// Formats ProcessTimeoutResponse to ServiceBusMessage
+		/// Maps ProcessTimeoutResponse to ServiceBusMessage
 		/// </summary>
-		/// <param name="processTimeoutResponse"></param>
-		/// <param name="sessionId"></param>
+		/// <param name="processTimeoutResponse">Process timeout response to map</param>
+		/// <param name="sessionId">Session id for current process timeout response</param>
 		/// <returns></returns>
 		public static ServiceBusMessage ToServiceBusMessage(this ProcessTimeoutResponse processTimeoutResponse, string sessionId) => new(JsonSerializer.Serialize(processTimeoutResponse))
 		{
@@ -24,9 +24,9 @@ namespace Services.Mappers
 		};
 
 		/// <summary>
-		/// Formats ProcessTimeoutResponse to RabbitMQ message
+		/// Maps ProcessTimeoutResponse to RabbitMQ message
 		/// </summary>
-		/// <param name="processTimeoutResponse"></param>
+		/// <param name="processTimeoutResponse">Process timeout response to map</param>
 		/// <returns></returns>
 		public static byte[] ToRabbitMQMessage(this ProcessTimeoutResponse processTimeoutResponse) => Encoding.UTF8.GetBytes(JsonSerializer.Serialize(processTimeoutResponse));
 	}

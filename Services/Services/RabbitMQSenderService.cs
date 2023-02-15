@@ -175,34 +175,30 @@ namespace Services.Services
 		}
 
 		/// <summary>
-		/// Handler method used for rectangular prism and process timeout responses
+		/// Handler method used for rectangular prism, process timeout  and exception responses
 		/// </summary>
 		/// <param name="arguments"></param>
-		private static void ResponseHandler(BasicDeliverEventArgs arguments)
+		private void ResponseHandler(BasicDeliverEventArgs arguments)
 		{
 			var body = Encoding.UTF8.GetString(arguments.Body.ToArray());
 
 			if (arguments.BasicProperties.Type.Equals(MessageType.RectangularPrismResponse.GetDescription()))
 			{
 				var rectangularPrismResponse = JsonSerializer.Deserialize<RectangularPrismResponse>(body);
-
-				if (!RectangularPrismResponseHandler.Handle(rectangularPrismResponse))
-					return;
+				RectangularPrismResponseHandler.Handle(rectangularPrismResponse);
 			}
 			else if (arguments.BasicProperties.Type.Equals(MessageType.ProcessTimeoutResponse.GetDescription()))
 			{
 				var processTimeoutResponse = JsonSerializer.Deserialize<ProcessTimeoutResponse>(body);
-
-				if (!ProcessTimeoutResponseHandler.Handle(processTimeoutResponse))
-					return;
+				ProcessTimeoutResponseHandler.Handle(processTimeoutResponse);
 			}
 			else if (arguments.BasicProperties.Type.Equals(MessageType.ExceptionResponse.GetDescription()))
 			{
 				var exceptionResponse = JsonSerializer.Deserialize<ExceptionResponse>(body);
-
-				if (!ExceptionResponseHandler.Handle(exceptionResponse))
-					return;
+				ExceptionResponseHandler.Handle(exceptionResponse);
 			}
+
+			// Auto ack enabled for _sendAndReplyNoWaitChannel so no need to ack
 		}
 	}
 }

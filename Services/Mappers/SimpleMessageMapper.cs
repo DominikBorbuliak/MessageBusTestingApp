@@ -11,9 +11,9 @@ namespace Services.Mappers
 	public static class SimpleMessageMapper
 	{
 		/// <summary>
-		/// Formats SimpleMessage to ServiceBusMessage
+		/// Maps SimpleMessage to ServiceBusMessage
 		/// </summary>
-		/// <param name="simpleMessage"></param>
+		/// <param name="simpleMessage">Simple message to map</param>
 		/// <returns></returns>
 		public static ServiceBusMessage ToServiceBusMessage(this SimpleMessage simpleMessage) => new(simpleMessage.Text)
 		{
@@ -21,9 +21,9 @@ namespace Services.Mappers
 		};
 
 		/// <summary>
-		/// Formats SimpleMessage to ServiceBusMessage
+		/// Maps SimpleMessage to ServiceBusMessage
 		/// </summary>
-		/// <param name="simpleMessage"></param>
+		/// <param name="simpleMessage">Simple message to map</param>
 		/// <returns></returns>
 		public static byte[] ToRabbitMQMessage(this SimpleMessage simpleMessage) => Encoding.UTF8.GetBytes(simpleMessage.Text);
 	}

@@ -106,7 +106,7 @@ namespace Services.Services
 		}
 
 		/// <summary>
-		/// Handler method used for simple and advanced messages
+		/// Handler method used for simple, advanced and exception message
 		/// </summary>
 		/// <param name="arguments"></param>
 		/// <returns></returns>
@@ -129,13 +129,12 @@ namespace Services.Services
 				{
 					var advancedMessage = JsonSerializer.Deserialize<AdvancedMessage>(body);
 
-					if (!AdvancedMessageHandler.Handle(advancedMessage))
-						return;
-
-					_sendOnlyChannel.BasicAck(
-						deliveryTag: arguments.DeliveryTag,
-						multiple: false
-					);
+					// Ack message only if deserialization was correct
+					if (AdvancedMessageHandler.Handle(advancedMessage))
+						_sendOnlyChannel.BasicAck(
+							deliveryTag: arguments.DeliveryTag,
+							multiple: false
+						);
 				}
 				else if (arguments.BasicProperties.Type.Equals(MessageType.ExceptionMessage.GetDescription()))
 				{
@@ -152,17 +151,18 @@ namespace Services.Services
 						if (_maxNumberOfDeliveryCounts <= deliveryCount)
 							return;
 
-						if (!ExceptionMessageHandler.Handle(exceptionMessage, deliveryCount))
-							return;
-
-						_sendOnlyChannel.BasicAck(
-							deliveryTag: arguments.DeliveryTag,
-							multiple: false
-						);
+						// Ack message only if deserialization was correct
+						if (ExceptionMessageHandler.Handle(exceptionMessage, deliveryCount))
+							_sendOnlyChannel.BasicAck(
+								deliveryTag: arguments.DeliveryTag,
+								multiple: false
+							);
 					}
 					catch (Exception exception)
 					{
 						ConsoleUtils.WriteLineColor($"Exception occured: {exception.Message}", ConsoleColor.Red);
+
+						// RabbitMQ does not have built in error handling so we need to use nack to reque
 						_sendOnlyChannel.BasicNack(arguments.DeliveryTag, false, true);
 					}
 				}
@@ -212,6 +212,8 @@ namespace Services.Services
 					}
 
 					var rectangularPrismResponse = RectangularPrismRequestHandler.HandleAndGenerateResponse(rectangularPrismRequest, deliveryCount);
+
+					// Publish response and ack request only if deserialization was correct
 					if (rectangularPrismResponse == null)
 						return;
 
@@ -234,6 +236,8 @@ namespace Services.Services
 				catch (Exception exception)
 				{
 					ConsoleUtils.WriteLineColor($"Exception occured: {exception.Message}", ConsoleColor.Red);
+
+					// RabbitMQ does not have built in error handling so we need to use nack to reque
 					_sendAndReplyNoWaitChannel.BasicNack(arguments.DeliveryTag, false, true);
 				}
 			}
@@ -242,6 +246,8 @@ namespace Services.Services
 				var processTimeoutRequest = JsonSerializer.Deserialize<ProcessTimeoutRequest>(body);
 
 				var processTimeoutResponse = await ProcessTimeoutRequestHandler.HandleAndGenerateResponse(processTimeoutRequest);
+
+				// Publish response and ack request only if deserialization was correct
 				if (processTimeoutResponse == null)
 					return;
 

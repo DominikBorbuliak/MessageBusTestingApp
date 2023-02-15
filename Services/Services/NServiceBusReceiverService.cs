@@ -59,12 +59,7 @@ namespace Services.Services
 
 		public async Task StartJob()
 		{
-			_sendOnlyEndpointConfiguration.ExecuteTheseHandlersFirst(typeof(NServiceBusSimpleMessageHandler));
-			_sendOnlyEndpointConfiguration.ExecuteTheseHandlersFirst(typeof(NServiceBusAdvancedMessageHandler));
-
 			_sendOnlyEndpointInstance = await Endpoint.Start(_sendOnlyEndpointConfiguration);
-
-			_sendAndReplyNoWaitEndpointConfiguration.ExecuteTheseHandlersFirst(typeof(NServiceBusRectangularPrismRequestHandler));
 
 			_sendAndReplyNoWaitEndpointInstance = await Endpoint.Start(_sendAndReplyNoWaitEndpointConfiguration);
 		}
@@ -177,10 +172,10 @@ namespace Services.Services
 			}
 
 			var rectangularPrismResponse = RectangularPrismRequestHandler.HandleAndGenerateResponse(rectangularPrismRequest, deliveryCount);
-			if (rectangularPrismResponse == null)
-				return;
 
-			await context.Reply(rectangularPrismResponse);
+			// Reply only if deserialization was correct
+			if (rectangularPrismResponse != null)
+				await context.Reply(rectangularPrismResponse);
 		}
 	}
 
@@ -192,10 +187,10 @@ namespace Services.Services
 		public async Task Handle(ProcessTimeoutRequest processTimeoutRequest, IMessageHandlerContext context)
 		{
 			var processTimeoutResponse = await ProcessTimeoutRequestHandler.HandleAndGenerateResponse(processTimeoutRequest);
-			if (processTimeoutResponse == null)
-				return;
 
-			await context.Reply(processTimeoutResponse);
+			// Reply only if deserialization was correct
+			if (processTimeoutResponse != null)
+				await context.Reply(processTimeoutResponse);
 		}
 	}
 }

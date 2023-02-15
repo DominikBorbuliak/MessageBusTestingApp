@@ -15,14 +15,14 @@ namespace Services.Handlers
 		/// <returns></returns>
 		public static bool Handle(ProcessTimeoutResponse? processTimeoutResponse)
 		{
-			if (processTimeoutResponse != null)
+			if (processTimeoutResponse == null)
 			{
-				ConsoleUtils.WriteLineColor($"Received process timeout response: {processTimeoutResponse.ProcessName}", ConsoleColor.Green);
-				return true;
+				ConsoleUtils.WriteLineColor("ProcessTimeoutResponse could not be deserialized correctly!", ConsoleColor.Red);
+				return false;
 			}
 
-			ConsoleUtils.WriteLineColor("No response found for: ProcessTimeoutResponse!", ConsoleColor.Red);
-			return false;
+			ConsoleUtils.WriteLineColor($"Process timeout response received: {processTimeoutResponse.ProcessName}", ConsoleColor.Green);
+			return true;
 		}
 	}
 }

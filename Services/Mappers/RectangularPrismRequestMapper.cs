@@ -1,7 +1,7 @@
 ﻿using Azure.Messaging.ServiceBus;
 using Services.Models;
-using System.Text.Json;
 using System.Text;
+using System.Text.Json;
 using Utils;
 
 namespace Services.Mappers
@@ -12,10 +12,11 @@ namespace Services.Mappers
 	public static class RectangularPrismRequestMapper
 	{
 		/// <summary>
-		/// Formats RectangularPrismRequest to ServiceBusMessage
+		/// Maps RectangularPrismRequest to ServiceBusMessage
 		/// </summary>
-		/// <param name="rectangularPrismRequest"></param>
-		/// <param name="sessionId"></param>
+		/// <param name="rectangularPrismRequest">Rectangular prism request to map</param>
+		/// <param name="sessionId">Session id for current rectangular prism request</param>
+		/// <param name="wait">Determines whether it is request to which sender must wait</param>
 		/// <returns></returns>
 		public static ServiceBusMessage ToServiceBusMessage(this RectangularPrismRequest rectangularPrismRequest, string sessionId, bool wait) => new(JsonSerializer.Serialize(rectangularPrismRequest))
 		{
@@ -24,9 +25,9 @@ namespace Services.Mappers
 		};
 
 		/// <summary>
-		/// Formats RectangularPrismRequest to RabbitMQ message
+		/// Maps RectangularPrismRequest to RabbitMQ message
 		/// </summary>
-		/// <param name="rectangularPrismRequest"></param>
+		/// <param name="rectangularPrismRequest">Rectangular prism request to map</param>
 		/// <returns></returns>
 		public static byte[] ToRabbitMQMessage(this RectangularPrismRequest rectangularPrismRequest) => Encoding.UTF8.GetBytes(JsonSerializer.Serialize(rectangularPrismRequest));
 	}

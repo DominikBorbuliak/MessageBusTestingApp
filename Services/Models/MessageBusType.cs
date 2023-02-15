@@ -3,7 +3,7 @@
 namespace Services.Models
 {
 	/// <summary>
-	/// Enum used to determine which type of message bus should be used
+	/// Enum used to determine which type of message bus should be used and to display menu
 	/// </summary>
 	public enum MessageBusType
 	{

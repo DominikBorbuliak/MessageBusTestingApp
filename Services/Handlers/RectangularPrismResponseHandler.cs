@@ -4,25 +4,25 @@ using Utils;
 namespace Services.Handlers
 {
 	/// <summary>
-	/// Class used to handle rectangular prism responsee
+	/// Class used to handle rectangular prism response
 	/// </summary>
 	public static class RectangularPrismResponseHandler
 	{
 		/// <summary>
-		/// Handles exception message
+		/// Handles rectangular prism response
 		/// </summary>
-		/// <param name="rectangularPrismResponse">Message to handle</param>
+		/// <param name="rectangularPrismResponse">Response to handle</param>
 		/// <returns></returns>
 		public static bool Handle(RectangularPrismResponse? rectangularPrismResponse)
 		{
-			if (rectangularPrismResponse != null)
+			if (rectangularPrismResponse == null)
 			{
-				ConsoleUtils.WriteLineColor(rectangularPrismResponse.ToString(), ConsoleColor.Green);
-				return true;
+				ConsoleUtils.WriteLineColor("RectangularPrismResponse could not be deserialized correctly!", ConsoleColor.Red);
+				return false;
 			}
 
-			ConsoleUtils.WriteLineColor("Deserialization error: RectangularPrismResponse!", ConsoleColor.Red);
-			return false;
+			ConsoleUtils.WriteLineColor($"Rectangular prism response received:\n{rectangularPrismResponse}", ConsoleColor.Green);
+			return true;
 		}
 	}
 }

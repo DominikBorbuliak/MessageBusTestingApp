@@ -3,7 +3,7 @@
 namespace Services.Models
 {
 	/// <summary>
-	/// Enum used to determine send action
+	/// Enum used to determine send action and to display menu
 	/// </summary>
 	public enum ActionType
 	{

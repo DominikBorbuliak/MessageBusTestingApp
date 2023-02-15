@@ -15,14 +15,14 @@ namespace Services.Handlers
 		/// <returns></returns>
 		public static bool Handle(ExceptionResponse? exceptionResponse)
 		{
-			if (exceptionResponse != null)
+			if (exceptionResponse == null)
 			{
-				ConsoleUtils.WriteLineColor(exceptionResponse.Text, ConsoleColor.Red);
-				return true;
+				ConsoleUtils.WriteLineColor("ExceptionResponse could not be deserialized correctly!", ConsoleColor.Red);
+				return false;
 			}
 
-			ConsoleUtils.WriteLineColor("No response found for: ExceptionResponse!", ConsoleColor.Red);
-			return false;
+			ConsoleUtils.WriteLineColor(exceptionResponse.Text, ConsoleColor.Red);
+			return true;
 		}
 	}
 }
