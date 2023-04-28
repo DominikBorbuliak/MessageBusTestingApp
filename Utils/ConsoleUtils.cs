@@ -12,11 +12,9 @@
 		/// <param name="textColor">Color of the text</param>
 		public static void WriteLineColor(string text, ConsoleColor textColor)
 		{
-			var oldTextColor = Console.ForegroundColor;
-
 			Console.ForegroundColor = textColor;
 			Console.WriteLine(text);
-			Console.ForegroundColor = oldTextColor;
+			Console.ForegroundColor = ConsoleColor.White;
 		}
 
 		/// <summary>
