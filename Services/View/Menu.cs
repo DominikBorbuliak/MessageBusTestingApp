@@ -75,7 +75,7 @@ namespace Services.View
 
 				if (key == ConsoleKey.UpArrow)
 				{
-					_selectedItemId = _selectedItemId - 1;
+					_selectedItemId--;
 					_selectedItemId += _selectedItemId < 0 ? _menuItems.Count : 0;
 				}
 				else if (key == ConsoleKey.DownArrow)

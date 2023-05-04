@@ -3,7 +3,7 @@
 	/// <summary>
 	/// Class to store useful console input and output functions
 	/// </summary>
-	public class ConsoleUtils
+	public static class ConsoleUtils
 	{
 		/// <summary>
 		/// Writes line to console with specific color of text

@@ -65,7 +65,7 @@ namespace Sender
 					services.AddSingleton<ISenderService>(x => new NServiceBusSenderService(Configuration, true));
 					break;
 				default:
-					throw new NotImplementedException($"{MessageBusType} is not yet implemented!");
+					throw new NotImplementedException($"{MessageBusType} is not implemented!");
 			}
 
 			services.AddSingleton<Application>();

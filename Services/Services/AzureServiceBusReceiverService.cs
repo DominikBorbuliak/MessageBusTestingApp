@@ -37,10 +37,10 @@ namespace Services.Services
 				}
 			});
 
-			_sendOnlyServiceBusProcessor = _serviceBusClient.CreateProcessor(configuration.GetSection("ConnectionSettings")["SendOnlyReceiverQueueName"], new ServiceBusProcessorOptions());
+			_sendOnlyServiceBusProcessor = _serviceBusClient.CreateProcessor(configuration.GetSection("ConnectionSettings")["SendOnlyReceiverQueueName"]);
 
-			_sendAndReplyWaitServiceBusProcessor = _serviceBusClient.CreateSessionProcessor(configuration.GetSection("ConnectionSettings")["SendAndReplyWaitReceiverQueueName"], new ServiceBusSessionProcessorOptions());
 			_sendAndReplyWaitServiceBusSender = _serviceBusClient.CreateSender(configuration.GetSection("ConnectionSettings")["SendAndReplyWaitSenderQueueName"]);
+			_sendAndReplyWaitServiceBusProcessor = _serviceBusClient.CreateSessionProcessor(configuration.GetSection("ConnectionSettings")["SendAndReplyWaitReceiverQueueName"]);
 
 			_sendAndReplyNoWaitServiceBusSender = _serviceBusClient.CreateSender(configuration.GetSection("ConnectionSettings")["SendAndReplyNoWaitSenderQueueName"]);
 			_sendAndReplyNoWaitServiceBusProcessor = _serviceBusClient.CreateSessionProcessor(configuration.GetSection("ConnectionSettings")["SendAndReplyNoWaitReceiverQueueName"]);
@@ -135,7 +135,7 @@ namespace Services.Services
 				catch
 				{
 					// Simulate simple error handling in No Wait
-					if (arguments.Message.Subject.Equals(MessageType.RectangularPrismNoWaitRequest.GetDescription()) && _maxRetries == arguments.Message.DeliveryCount)
+					if (arguments.Message.Subject.Equals(MessageType.RectangularPrismNoWaitRequest.GetDescription()) && _maxRetries <= arguments.Message.DeliveryCount)
 						await _sendAndReplyNoWaitServiceBusSender.SendMessageAsync(new ExceptionResponse { Text = "No response found for: RectangularPrismResponse!" }.ToServiceBusMessage(arguments.SessionId));
 
 					// Error must be thrown in all cases to trigger error handler

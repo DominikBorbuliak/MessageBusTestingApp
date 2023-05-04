@@ -31,7 +31,9 @@ namespace Services.Services
 			};
 
 			_connection = connectionFactory.CreateConnection();
+
 			_sendOnlyChannel = _connection.CreateModel();
+			_sendAndReplyNoWaitChannel = _connection.CreateModel();
 
 			_sendOnlyChannel.QueueDeclare(
 				queue: _configuration.GetSection("ConnectionSettings")["SendOnlyReceiverQueueName"],
@@ -41,7 +43,13 @@ namespace Services.Services
 				arguments: null
 			);
 
-			_sendAndReplyNoWaitChannel = _connection.CreateModel();
+			_sendAndReplyNoWaitChannel.QueueDeclare(
+				queue: _configuration.GetSection("ConnectionSettings")["SendAndReplyNoWaitReceiverQueueName"],
+				durable: false,
+				exclusive: false,
+				autoDelete: false,
+				arguments: null
+			);
 
 			_sendAndReplyNoWaitChannel.QueueDeclare(
 				queue: _configuration.GetSection("ConnectionSettings")["SendAndReplyNoWaitSenderQueueName"],
@@ -52,9 +60,7 @@ namespace Services.Services
 			);
 
 			_sendAndReplyNoWaitConsumer = new EventingBasicConsumer(_sendAndReplyNoWaitChannel);
-
 			_sendAndReplyNoWaitConsumer.Received += (_, ea) => ResponseHandler(ea);
-
 			_sendAndReplyNoWaitChannel.BasicConsume(
 				consumer: _sendAndReplyNoWaitConsumer,
 				queue: _configuration.GetSection("ConnectionSettings")["SendAndReplyNoWaitSenderQueueName"],
@@ -71,7 +77,7 @@ namespace Services.Services
 
 				_sendOnlyChannel.BasicPublish(
 					exchange: "",
-					routingKey: "nativesendonlyreceiver",
+					routingKey: _configuration.GetSection("ConnectionSettings")["SendOnlyReceiverQueueName"],
 					basicProperties: props,
 					body: simpleMessage.ToRabbitMQMessage()
 				);
@@ -87,7 +93,7 @@ namespace Services.Services
 
 				_sendOnlyChannel.BasicPublish(
 					exchange: "",
-					routingKey: "nativesendonlyreceiver",
+					routingKey: _configuration.GetSection("ConnectionSettings")["SendOnlyReceiverQueueName"],
 					basicProperties: props,
 					body: advancedMessage.ToRabbitMQMessage()
 				);
@@ -104,7 +110,7 @@ namespace Services.Services
 
 				_sendOnlyChannel.BasicPublish(
 					exchange: "",
-					routingKey: "nativesendonlyreceiver",
+					routingKey: _configuration.GetSection("ConnectionSettings")["SendOnlyReceiverQueueName"],
 					basicProperties: props,
 					body: exceptionMessage.ToRabbitMQMessage()
 				);
@@ -115,11 +121,9 @@ namespace Services.Services
 		{
 			await Task.Run(() =>
 			{
+				// Wait solution was not found
 				if (wait)
-				{
-					ConsoleUtils.WriteLineColor("This feature is not possible in RabbitMQ!", ConsoleColor.Yellow);
 					return;
-				}
 
 				var props = _sendAndReplyNoWaitChannel.CreateBasicProperties();
 				var correlationId = Guid.NewGuid().ToString();
@@ -131,7 +135,7 @@ namespace Services.Services
 
 				_sendAndReplyNoWaitChannel.BasicPublish(
 					exchange: "",
-					routingKey: "nativesendandreplynowaitreceiver",
+					routingKey: _configuration.GetSection("ConnectionSettings")["SendAndReplyNoWaitReceiverQueueName"],
 					basicProperties: props,
 					body: rectangularPrismRequest.ToRabbitMQMessage()
 				);
@@ -142,11 +146,9 @@ namespace Services.Services
 		{
 			await Task.Run(() =>
 			{
+				// Wait solution was not found
 				if (wait)
-				{
-					ConsoleUtils.WriteLineColor("This feature is not possible in RabbitMQ!", ConsoleColor.Yellow);
 					return;
-				}
 
 				var props = _sendAndReplyNoWaitChannel.CreateBasicProperties();
 				var correlationId = Guid.NewGuid().ToString();
@@ -157,7 +159,7 @@ namespace Services.Services
 
 				_sendAndReplyNoWaitChannel.BasicPublish(
 					exchange: "",
-					routingKey: "nativesendandreplynowaitreceiver",
+					routingKey: _configuration.GetSection("ConnectionSettings")["SendAndReplyNoWaitReceiverQueueName"],
 					basicProperties: props,
 					body: processTimeoutRequest.ToRabbitMQMessage()
 				);

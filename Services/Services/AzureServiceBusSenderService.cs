@@ -35,6 +35,7 @@ namespace Services.Services
 
 			_sendAndReplyNoWaitServiceBusSender = _serviceBusClient.CreateSender(_configuration.GetSection("ConnectionSettings")["SendAndReplyNoWaitReceiverQueueName"]);
 			_sendAndReplyNoWaitServiceBusProcessor = _serviceBusClient.CreateSessionProcessor(_configuration.GetSection("ConnectionSettings")["SendAndReplyNoWaitSenderQueueName"]);
+
 			_sendAndReplyNoWaitServiceBusProcessor.ProcessMessageAsync += ResponseHandler;
 			_sendAndReplyNoWaitServiceBusProcessor.ProcessErrorAsync += ErrorHandler;
 			_sendAndReplyNoWaitServiceBusProcessor.StartProcessingAsync().Wait();
@@ -64,7 +65,7 @@ namespace Services.Services
 
 			await _sendAndReplyWaitServiceBusSender.SendMessageAsync(serviceBusMessage);
 
-			var responseMessage = await serviceBusReceiver.ReceiveMessageAsync();
+			var responseMessage = await serviceBusReceiver.ReceiveMessageAsync(TimeSpan.FromSeconds(10));
 
 			// If null is returned by receiver it means that request was not processed due to repeating exception or timeout
 			if (responseMessage == null)

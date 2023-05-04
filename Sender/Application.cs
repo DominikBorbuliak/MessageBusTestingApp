@@ -1,6 +1,7 @@
 ﻿using Services.Contracts;
 using Services.Data;
 using Services.Models;
+using Services.Services;
 using Services.View;
 using Utils;
 
@@ -116,7 +117,7 @@ namespace Sender
 				Address = new AdvancedMessageAddress
 				{
 					StreetName = ConsoleUtils.GetUserTextInput("Please enter the street name:"),
-					BuildingNumber = ConsoleUtils.GetUserIntegerInput("Please enter the street number:"),
+					BuildingNumber = ConsoleUtils.GetUserIntegerInput("Please enter the building number:"),
 					City = ConsoleUtils.GetUserTextInput("Please enter the city:"),
 					PostalCode = ConsoleUtils.GetUserTextInput("Please enter the postal code:"),
 					Country = ConsoleUtils.GetUserTextInput("Please enter the country:")
@@ -127,7 +128,7 @@ namespace Sender
 		}
 
 		/// <summary>
-		/// Sends N randomly generated simple messages
+		/// Sends N randomly generated simple messages at the same time
 		/// </summary>
 		/// <returns></returns>
 		private async Task HandleSendOnlyNRandomSimpleMessages()
@@ -136,23 +137,20 @@ namespace Sender
 
 			var randomMessages = RandomMessageGenerator.GetRandomSimpleMessages(n);
 
-			foreach (var randomMessage in randomMessages)
-				await _senderService.SendSimpleMessage(randomMessage);
+			await Task.WhenAll(randomMessages.Select(randomMessage => _senderService.SendSimpleMessage(randomMessage)));
 		}
 
 		/// <summary>
-		/// Sends N randomly generated advanced messages
+		/// Sends N randomly generated advanced messages at the same time
 		/// </summary>
 		/// <returns></returns>
 		private async Task HandleSendOnlyNRandomAdvancedMessages()
 		{
 			var n = ConsoleUtils.GetUserIntegerInput("Please enter the number of messages you want to send:");
 
-			RandomMessageGenerator messageGenerator = new RandomMessageGenerator();
-			var randomMessages = await messageGenerator.GetRandomAdvancedMessages(n);
+			var randomMessages = await new RandomMessageGenerator().GetRandomAdvancedMessages(n);
 
-			foreach (var randomMessage in randomMessages)
-				await _senderService.SendAdvancedMessage(randomMessage);
+			await Task.WhenAll(randomMessages.Select(randomMessage => _senderService.SendAdvancedMessage(randomMessage)));
 		}
 
 		/// <summary>
@@ -163,7 +161,7 @@ namespace Sender
 		{
 			var exceptionMessage = new ExceptionMessage
 			{
-				SucceedOn = ConsoleUtils.GetUserIntegerInput("Please enter the number (1 is first try, 0 or less to never succeed) of request on which it will succeed:"),
+				SucceedOn = ConsoleUtils.GetUserIntegerInput("Please enter the number (1 is first try, 0 or less to never succeed) of attempt on which it will succeed:"),
 				ExceptionText = ConsoleUtils.GetUserTextInput("Please enter the text of the exception:")
 			};
 
@@ -176,6 +174,12 @@ namespace Sender
 		/// <returns></returns>
 		private async Task HandleSendAndReplyRectangularPrism(bool wait)
 		{
+			if (wait && (typeof(RabbitMQSenderService) == _senderService.GetType() || typeof(NServiceBusSenderService) == _senderService.GetType()))
+			{
+				ConsoleUtils.WriteLineColor("Solution not found!", ConsoleColor.Yellow);
+				return;
+			}
+
 			var rectangularPrismRequest = new RectangularPrismRequest
 			{
 				EdgeA = ConsoleUtils.GetUserDoubleInput("Please enter the length of edge A:"),
@@ -193,6 +197,12 @@ namespace Sender
 		/// <returns></returns>
 		private async Task HandleSendAndReplySimulateNClients(bool wait)
 		{
+			if (wait && (typeof(RabbitMQSenderService) == _senderService.GetType() || typeof(NServiceBusSenderService) == _senderService.GetType()))
+			{
+				ConsoleUtils.WriteLineColor("Solution not found!", ConsoleColor.Yellow);
+				return;
+			}
+
 			var n = ConsoleUtils.GetUserIntegerInput("Please enter the number of clients you want to simulate:");
 
 			var processTimeoutRequests = new List<ProcessTimeoutRequest>();
@@ -214,12 +224,18 @@ namespace Sender
 		/// <returns></returns>
 		private async Task HandleSendAndReplySimulateException(bool wait)
 		{
+			if (wait && (typeof(RabbitMQSenderService) == _senderService.GetType() || typeof(NServiceBusSenderService) == _senderService.GetType()))
+			{
+				ConsoleUtils.WriteLineColor("Solution not found!", ConsoleColor.Yellow);
+				return;
+			}
+
 			var rectangularPrismRequest = new RectangularPrismRequest
 			{
 				EdgeA = ConsoleUtils.GetUserDoubleInput("Please enter the length of edge A:"),
 				EdgeB = ConsoleUtils.GetUserDoubleInput("Please enter the length of edge B:"),
 				EdgeC = ConsoleUtils.GetUserDoubleInput("Please enter the length of edge C:"),
-				SucceedOn = ConsoleUtils.GetUserIntegerInput("Please enter the number (1 is first try, 0 or less to never succeed) of request on which it will succeed:"),
+				SucceedOn = ConsoleUtils.GetUserIntegerInput("Please enter the number (1 is first try, 0 or less to never succeed) of attempt on which it will succeed:"),
 				ExceptionText = ConsoleUtils.GetUserTextInput("Please enter the text of the exception:")
 			};
 

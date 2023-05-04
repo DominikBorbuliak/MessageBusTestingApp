@@ -1,5 +1,6 @@
 ﻿using Services.Data.Models;
 using Services.Models;
+using System.Text;
 using System.Text.Json;
 
 namespace Services.Data
@@ -91,17 +92,17 @@ namespace Services.Data
 		/// <returns></returns>
 		private static string GenerateRandomText(int minLength = 1, int maxLength = 256)
 		{
-			var result = string.Empty;
+			var stringBuilder = new StringBuilder();
 			var random = new Random();
 			var length = random.Next(minLength, maxLength);
 
 			for (var i = 0; i < length; i++)
 			{
 				var position = random.Next(0, RandomCharacters.Length);
-				result += RandomCharacters[position];
+				stringBuilder.Append(RandomCharacters[position]);
 			}
 
-			return result;
+			return stringBuilder.ToString();
 		}
 
 		/// <summary>

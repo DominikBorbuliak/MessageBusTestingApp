@@ -65,7 +65,7 @@ namespace Receiver
 					services.AddSingleton<IReceiverService>(x => new NServiceBusReceiverService(Configuration, true));
 					break;
 				default:
-					throw new NotImplementedException($"{MessageBusType} is not yet implemented!");
+					throw new NotImplementedException($"{MessageBusType} is not implemented!");
 			}
 
 			services.AddSingleton<Application>();

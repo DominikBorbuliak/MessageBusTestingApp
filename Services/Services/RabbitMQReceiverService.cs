@@ -13,6 +13,7 @@ namespace Services.Services
 {
 	public class RabbitMQReceiverService : IReceiverService
 	{
+		private readonly IConfiguration _configuration;
 		private readonly IConnection _connection;
 
 		private readonly IModel _sendOnlyChannel;
@@ -33,11 +34,13 @@ namespace Services.Services
 
 		public RabbitMQReceiverService(IConfiguration configuration)
 		{
+			_configuration = configuration;
+
 			_deliveryCounts = new Dictionary<string, int>();
 
 			var connectionFactory = new ConnectionFactory
 			{
-				HostName = configuration.GetSection("ConnectionSettings")["HostName"],
+				HostName = _configuration.GetSection("ConnectionSettings")["HostName"],
 				DispatchConsumersAsync = true,
 				ConsumerDispatchConcurrency = 3
 			};
@@ -45,9 +48,26 @@ namespace Services.Services
 			_connection = connectionFactory.CreateConnection();
 
 			_sendOnlyChannel = _connection.CreateModel();
+			_sendAndReplyNoWaitChannel = _connection.CreateModel();
 
 			_sendOnlyChannel.QueueDeclare(
-				queue: configuration.GetSection("ConnectionSettings")["SendOnlyReceiverQueueName"],
+				queue: _configuration.GetSection("ConnectionSettings")["SendOnlyReceiverQueueName"],
+				durable: false,
+				exclusive: false,
+				autoDelete: false,
+				arguments: null
+			);
+
+			_sendAndReplyNoWaitChannel.QueueDeclare(
+				queue: _configuration.GetSection("ConnectionSettings")["SendAndReplyNoWaitReceiverQueueName"],
+				durable: false,
+				exclusive: false,
+				autoDelete: false,
+				arguments: null
+			);
+
+			_sendAndReplyNoWaitChannel.QueueDeclare(
+				queue: _configuration.GetSection("ConnectionSettings")["SendAndReplyNoWaitSenderQueueName"],
 				durable: false,
 				exclusive: false,
 				autoDelete: false,
@@ -55,16 +75,6 @@ namespace Services.Services
 			);
 
 			_sendOnlyConsumer = new AsyncEventingBasicConsumer(_sendOnlyChannel);
-
-			_sendAndReplyNoWaitChannel = _connection.CreateModel();
-
-			_sendAndReplyNoWaitChannel.QueueDeclare(
-				queue: configuration.GetSection("ConnectionSettings")["SendAndReplyNoWaitReceiverQueueName"],
-				durable: false,
-				exclusive: false,
-				autoDelete: false,
-				arguments: null
-			);
 
 			_sendAndReplyNoWaitChannel.BasicQos(0, 3, false);
 			_sendAndReplyNoWaitConsumer = new AsyncEventingBasicConsumer(_sendAndReplyNoWaitChannel);
@@ -75,17 +85,15 @@ namespace Services.Services
 			await Task.Run(() =>
 			{
 				_sendOnlyConsumer.Received += (_, eventArguments) => MessageHandler(eventArguments);
-
 				_sendOnlyChannel.BasicConsume(
-					queue: "nativesendonlyreceiver",
+					queue: _configuration.GetSection("ConnectionSettings")["SendOnlyReceiverQueueName"],
 					autoAck: false,
 					consumer: _sendOnlyConsumer
 				);
 
 				_sendAndReplyNoWaitConsumer.Received += (_, eventArguments) => RequestHandler(eventArguments);
-
 				_sendAndReplyNoWaitChannel.BasicConsume(
-					queue: "nativesendandreplynowaitreceiver",
+					queue: _configuration.GetSection("ConnectionSettings")["SendAndReplyNoWaitReceiverQueueName"],
 					autoAck: false,
 					consumer: _sendAndReplyNoWaitConsumer
 				);
@@ -116,25 +124,17 @@ namespace Services.Services
 			{
 				var body = Encoding.UTF8.GetString(arguments.Body.ToArray());
 
+				var deserializedCorrectly = false;
+
 				if (arguments.BasicProperties.Type.Equals(MessageType.SimpleMessage.GetDescription()))
 				{
 					ConsoleUtils.WriteLineColor($"Simple messsage received: {body}", ConsoleColor.Green);
-
-					_sendOnlyChannel.BasicAck(
-						deliveryTag: arguments.DeliveryTag,
-						multiple: false
-					);
+					deserializedCorrectly = true;
 				}
 				else if (arguments.BasicProperties.Type.Equals(MessageType.AdvancedMessage.GetDescription()))
 				{
 					var advancedMessage = JsonSerializer.Deserialize<AdvancedMessage>(body);
-
-					// Ack message only if deserialization was correct
-					if (AdvancedMessageHandler.Handle(advancedMessage))
-						_sendOnlyChannel.BasicAck(
-							deliveryTag: arguments.DeliveryTag,
-							multiple: false
-						);
+					deserializedCorrectly = AdvancedMessageHandler.Handle(advancedMessage);
 				}
 				else if (arguments.BasicProperties.Type.Equals(MessageType.ExceptionMessage.GetDescription()))
 				{
@@ -144,19 +144,15 @@ namespace Services.Services
 
 						if (!_deliveryCounts.ContainsKey(arguments.BasicProperties.MessageId))
 							_deliveryCounts.Add(arguments.BasicProperties.MessageId, 1);
+						else
+							_deliveryCounts[arguments.BasicProperties.MessageId] += 1;
 
 						var deliveryCount = _deliveryCounts[arguments.BasicProperties.MessageId];
-						_deliveryCounts[arguments.BasicProperties.MessageId] += 1;
 
-						if (_maxNumberOfDeliveryCounts <= deliveryCount)
+						if (_maxNumberOfDeliveryCounts < deliveryCount)
 							return;
 
-						// Ack message only if deserialization was correct
-						if (ExceptionMessageHandler.Handle(exceptionMessage, deliveryCount))
-							_sendOnlyChannel.BasicAck(
-								deliveryTag: arguments.DeliveryTag,
-								multiple: false
-							);
+						deserializedCorrectly = ExceptionMessageHandler.Handle(exceptionMessage, deliveryCount);
 					}
 					catch (Exception exception)
 					{
@@ -164,8 +160,16 @@ namespace Services.Services
 
 						// RabbitMQ does not have built in error handling so we need to use nack to reque
 						_sendOnlyChannel.BasicNack(arguments.DeliveryTag, false, true);
+						return;
 					}
 				}
+
+				// Ack message only if deserialization was correct
+				if (deserializedCorrectly)
+					_sendOnlyChannel.BasicAck(
+						deliveryTag: arguments.DeliveryTag,
+						multiple: false
+					);
 			});
 		}
 
@@ -186,11 +190,13 @@ namespace Services.Services
 
 					if (!_deliveryCounts.ContainsKey(arguments.BasicProperties.MessageId))
 						_deliveryCounts.Add(arguments.BasicProperties.MessageId, 1);
+					else
+						_deliveryCounts[arguments.BasicProperties.MessageId] += 1;
 
 					var deliveryCount = _deliveryCounts[arguments.BasicProperties.MessageId];
-					_deliveryCounts[arguments.BasicProperties.MessageId] += 1;
 
-					if (_maxNumberOfDeliveryCounts <= deliveryCount)
+					// Simulate simple error handling in No Wait
+					if (_maxNumberOfDeliveryCounts < deliveryCount)
 					{
 						var exceptionResponseProps = _sendAndReplyNoWaitChannel.CreateBasicProperties();
 						exceptionResponseProps.Type = MessageType.ExceptionResponse.GetDescription();
@@ -227,11 +233,6 @@ namespace Services.Services
 						basicProperties: props,
 						body: rectangularPrismResponse.ToRabbitMQMessage()
 					);
-
-					_sendAndReplyNoWaitChannel.BasicAck(
-						deliveryTag: arguments.DeliveryTag,
-						multiple: false
-					);
 				}
 				catch (Exception exception)
 				{
@@ -239,6 +240,7 @@ namespace Services.Services
 
 					// RabbitMQ does not have built in error handling so we need to use nack to reque
 					_sendAndReplyNoWaitChannel.BasicNack(arguments.DeliveryTag, false, true);
+					return;
 				}
 			}
 			else if (arguments.BasicProperties.Type.Equals(MessageType.ProcessTimeoutNoWaitRequest.GetDescription()))
@@ -261,12 +263,12 @@ namespace Services.Services
 					basicProperties: props,
 					body: processTimeoutResponse.ToRabbitMQMessage()
 				);
-
-				_sendAndReplyNoWaitChannel.BasicAck(
-					deliveryTag: arguments.DeliveryTag,
-					multiple: false
-				);
 			}
+
+			_sendAndReplyNoWaitChannel.BasicAck(
+				deliveryTag: arguments.DeliveryTag,
+				multiple: false
+			);
 		}
 	}
 }

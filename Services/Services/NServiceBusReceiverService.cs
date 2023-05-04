@@ -129,11 +129,12 @@ namespace Services.Services
 			{
 				if (!_deliveryCounts.ContainsKey(context.MessageId))
 					_deliveryCounts.Add(context.MessageId, 1);
+				else
+					_deliveryCounts[context.MessageId] += 1;
 
 				var deliveryCount = _deliveryCounts[context.MessageId];
-				_deliveryCounts[context.MessageId] += 1;
 
-				if (_maxNumberOfDeliveryCounts <= deliveryCount)
+				if (_maxNumberOfDeliveryCounts < deliveryCount)
 					return;
 
 				ExceptionMessageHandler.Handle(message, deliveryCount);
@@ -161,11 +162,12 @@ namespace Services.Services
 		{
 			if (!_deliveryCounts.ContainsKey(context.MessageId))
 				_deliveryCounts.Add(context.MessageId, 1);
+			else
+				_deliveryCounts[context.MessageId] += 1;
 
 			var deliveryCount = _deliveryCounts[context.MessageId];
-			_deliveryCounts[context.MessageId] += 1;
 
-			if (_maxNumberOfDeliveryCounts <= deliveryCount)
+			if (_maxNumberOfDeliveryCounts < deliveryCount)
 			{
 				await context.Reply(new ExceptionResponse { Text = "No response found for: RectangularPrismResponse!" });
 				return;

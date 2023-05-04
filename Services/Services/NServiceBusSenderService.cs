@@ -68,22 +68,18 @@ namespace Services.Services
 
 		public async Task SendAndReplyRectangularPrism(RectangularPrismRequest rectangularPrismRequest, bool wait)
 		{
+			// Wait solution was not found
 			if (wait)
-			{
-				ConsoleUtils.WriteLineColor("This feature is not implemented yet!", ConsoleColor.Yellow);
 				return;
-			}
 
 			await _sendAndReplyNoWaitEndpointInstance.Send(rectangularPrismRequest);
 		}
 
 		public async Task SendAndReplyProcessTimeout(ProcessTimeoutRequest processTimeoutRequest, bool wait)
 		{
+			// Wait solution was not found
 			if (wait)
-			{
-				ConsoleUtils.WriteLineColor("This feature is not implemented yet!", ConsoleColor.Yellow);
 				return;
-			}
 
 			await _sendAndReplyNoWaitEndpointInstance.Send(processTimeoutRequest);
 		}
