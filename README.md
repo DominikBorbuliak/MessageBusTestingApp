@@ -110,10 +110,11 @@ Each message bus solution offers NuGet packages that provide various clients and
    - `ServiceBusProcessor` is used to process incoming messages that do not require response. Find more on this [link](https://learn.microsoft.com/en-us/dotnet/api/azure.messaging.servicebus.servicebusprocessor?view=azure-dotnet)
    - `ServiceBusSessionProcessor` is used to process incoming message that require response and to process response for sent messages that do not wait for such response. Find more on this [link](https://learn.microsoft.com/en-us/dotnet/api/azure.messaging.servicebus.servicebussessionprocessor?view=azure-dotnet)
    - `ServiceBusSessionReceiver` is used to wait for response to sent message. Find more on this [link](https://learn.microsoft.com/en-us/dotnet/api/azure.messaging.servicebus.servicebussessionreceiver?view=azure-dotnet)
+   - `ServiceBusSender` is used to send messages to the queue. Find more on this [link](https://learn.microsoft.com/en-us/dotnet/api/azure.messaging.servicebus.servicebussender?view=azure-dotnet)
 2. RabbitMQ
    - `ConnectionFactory` is used to create `IConnection` and setup options for the communication with message queues
    - `IConnection` is used to create `IModel`
-   - `IModel` represents channel, and it is used to declare message queues, set up options for the `AsyncEventingBasicConsumer` and send messages to queue
+   - `IModel` represents channel, and it is used to declare message queues, set up options for the `AsyncEventingBasicConsumer`, `EventingBasicConsumer` and send messages to queue
    - `AsyncEventingBasicConsumer` is used to process incoming messages
    - Find more information about these models and interfaces on this [link](https://www.rabbitmq.com/dotnet-api-guide.html#major-api-elements)
 3. NServiceBus
@@ -158,7 +159,7 @@ You can test various options by modifying them directly in the code and then re-
 
 ### << Send Only - 1 Custom Message - Simple >>
 - Simulates sending of the plain text
-- You need to provide text message
+- You need to provide text of the message
 - Message will be sent without serialization
 
 ### << Send Only - 1 Custom Message - Advanced >>
