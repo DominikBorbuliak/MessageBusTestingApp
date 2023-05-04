@@ -1,6 +1,6 @@
 # MessageBusTestingApp
 
-This application was created as a project that is part of bachelor thesis and was used to analyze different message bus options for the [Xolution](https://www.xolution.sk/).
+This application was created as a project that is part of bachelor thesis and was used to analyze different message bus solutions for the [Xolution](https://www.xolution.sk/).
 
 ## System requirements
 - One of the following windows versions:
@@ -118,7 +118,7 @@ Each message bus solution offers NuGet packages that provide various clients and
    - Find more information about these models and interfaces on this [link](https://www.rabbitmq.com/dotnet-api-guide.html#major-api-elements)
 3. NServiceBus
    - `EndpointConfiguration` is used to setup current endpoint/application, specify transport, set up recoverability options, create queues and create `IEndpointInstance`
-   - `TransportExtensions<T>` is used to setup transport and to connect with service bus
+   - `TransportExtensions<T>` is used to setup transport and to connect with message bus
    - `IEndpointInstance` is used to stop processing of messages and to send messages to queue
    - `IHandleMessages<T>` is used to define message handler
    - Find more information about these models and interfaces on this [link](https://docs.particular.net/transports/azure-service-bus/configuration)
@@ -147,7 +147,7 @@ You can test various options by modifying them directly in the code and then re-
    - ![image](https://user-images.githubusercontent.com/46026094/235990885-5dcb9bf4-efbe-4fbe-bfd6-b83249e2267a.png)
 2. A menu with message bus solutions will appear after the welcome screen
    - You need to pick a specific message bus solution that you want to analyze in both windows
-   - Nothing bad happens when you select different solution in each window, but for the best analysis it is necessary to select the same solution for both windows
+   - Nothing bad happens when you select different solution in each window, but for the best analysis it is necessary to select the same solution in both windows
    - ![image](https://user-images.githubusercontent.com/46026094/235993156-3e024c32-d52f-41db-9208-442816888e39.png)
 3. Receiver will only print information about current activities after the solution selection
    - You can press `ESC` to exit application anytime
@@ -179,7 +179,7 @@ You can test various options by modifying them directly in the code and then re-
 - Message will be sent with serialization
 
 ### << Send Only - Simulate Exception Thrown in Receiver >>
-- Simulates the exception thrown in receiver
+- Simulates the exception thrown in receiver for messages that do not need to get response
 - You need to provide the attempt on which the exception won't be thrown and the text of the exception
 - You can write number 0 or less to simulate a message that will always throw exception
 
